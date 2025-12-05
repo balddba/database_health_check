@@ -1,0 +1,154 @@
+[project]
+name = "oracle-service-validator"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.14"
+dependencies = [
+    "fabric>=3.2.2",
+    "jinja2>=3.0.0",
+    "loguru>=0.7.0",
+    "oracledb>=3.4.0",
+    "poethepoet>=0.37.0",
+    "pydantic>=2.12.4",
+    "pyyaml>=6.0.3",
+    "tabulate>=0.9.0",
+    "textual>=6.6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.10.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests",
+]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --tb=short --strict-markers"
+markers = [
+    "unit: unit tests",
+    "integration: integration tests",
+    "slow: slow running tests",
+]
+
+[tools.black]
+exclude = '\.git|\.tox|tests|docs|\.venv'
+target-version = ['py312']
+line-length = 420
+
+[tool.isort]
+py_version = 312
+profile = "black"
+line_length = 320
+
+[tool.ruff]
+line-length = 320
+indent-width = 4
+target-version = "py312"
+exclude = ["tests", "docs", "audit", "htmlReports", ".git", ".mypy_cache", ".pyenv", ".pytest_cache", "venv", ".venv", "venv.lock", ".venv.lock", ".ruff_cache", "build", "dist", "__pycache__", "alembic"]
+
+[tool.ruff.lint]
+preview = true
+#extend-select = ["W", "E", "D"]
+fixable = ["ALL"]
+select = [
+    "D",
+    "DOC",
+    "PT",
+    "E",
+    "W",
+    "F",
+    "ASYNC",
+    "I",
+    "FA",
+    "LOG",
+    "G",
+    "Q",
+    "RSE",
+    "SLF",
+    "TID",
+    "RUF",
+    "N",
+]
+exclude = [
+    ".venv",
+    "alembic/*"
+]
+ignore = [
+    "RUF015",
+    "DOC501",
+    "N805"
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+docstring-code-format = true
+docstring-code-line-length = 200
+
+
+
+
+[tool.poe.tasks]
+# Format the codebase using Black
+fmt = "black ."
+
+# Lint the codebase using Ruff (and ensure formatting is clean)
+lint.sequence = [
+  { cmd = "ruff check ." },
+  { cmd = "black --check ." }
+]
+
+# Apply auto-fixes for formatting and linting
+[tool.poe.tasks.fix]
+cmd = "bash -c 'ruff check --fix . ; black .'"
+
+# Apply unsafe fixes with ruff (use with caution)
+[tool.poe.tasks.fix-unsafe]
+cmd = "bash -c 'ruff check --fix --unsafe-fixes . ; black .'"
+
+# Run tests for all projects
+[tool.poe.tasks.test]
+cmd = "uv run --with pytest --with pytest-asyncio pytest"
+
+# Run tests for manage_db_links
+[tool.poe.tasks.test-links]
+cmd = "uv run --with pytest --with pytest-asyncio pytest tests/manage_db_links"
+
+# Run tests for manage_db_services
+[tool.poe.tasks.test-services]
+cmd = "uv run --with pytest --with pytest-asyncio pytest tests/manage_db_services"
+
+[tool.poe.tasks.isort]
+help = "Run iSort to sort imports"
+cmd = "isort --profile black ."
+
+[tool.poe.tasks.clean]
+help = "Cleanup temporary and cached files"
+cmd = """
+	rm -rf `find . -name __pycache__`
+	rm -f `find . -type f -name '*.py[co]'`
+	rm -f `find . -type f -name '*~'`
+	rm -f `find . -type f -name '.*~'`
+	rm -rf .cache
+	rm -rf .pytest_cache
+	rm -rf .ruff_cache
+	rm -rf *.egg-info
+	rm -rf build
+	rm -rf dist
+"""
+
+[dependency-groups]
+dev = [
+    "black>=25.11.0",
+    "isort>=7.0.0",
+]

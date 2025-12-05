@@ -1,0 +1,56 @@
+# Validation Rules for Oracle Health Checks
+# Defines default thresholds and allows per-database overrides
+
+validation_rules:
+  defaults:
+    # Password Validation Configuration
+    # List of validation function configurations (validation_function + associated profiles)
+    password_validation:
+      - validation_function: "ORA12C_VERIFY_FUNCTION"
+        profiles:
+          - "DEFAULT"
+          - "ORA_CIS_PROFILE"
+      - validation_function: "ORA12C_STIG_VERIFY_FUNCTION"
+        profiles:
+          - "ORA_STIG_PROFILE"
+
+    # Memory Configuration Checks
+    sga_target_min_gb: 8                              # Minimum SGA_TARGET in GB
+    sga_max_size_required: true                       # SGA_MAX_SIZE must be set
+    dism_enabled: true                                # SGA_TARGET should be less than SGA_MAX_SIZE
+    pga_aggregate_target_required: true               # PGA_AGGREGATE_TARGET must be set
+    pga_aggregate_limit_required: true                # PGA_AGGREGATE_LIMIT must be set
+    memory_target_required: false                     # MEMORY_TARGET - optional in modern Oracle
+
+    # Feature Configuration Checks
+    flashback_enabled: True                           # Flashback database should be enabled
+    unified_auditing_enabled: True                    # Unified Auditing should be enabled
+
+    # Database Objects Checks
+    open_dblinks_max: 100                             # Maximum number of open database links
+    jobs_enabled_min: 1                               # Minimum number of scheduler jobs
+    job_queue_processes_min: 50                       # Minimum JOB_QUEUE_PROCESSES setting
+    scheduler_log_retention_days: 30                  # Minimum scheduler log retention
+    job_class_log_retention_days: 1                   # Minimum job class log retention
+
+  # Database-specific overrides (key = database name from health_check.yaml)
+  overrides:
+    # Example: Override for FREE database (Oracle Free Tier)
+    FREE:
+      password_validation:
+        - validation_function: "ORA12C_VERIFY_FUNCTION"
+          profiles:
+            - "DEFAULT"
+            - "ORA_CIS_PROFILE"
+        - validation_function: "ORA12C_STIG_VERIFY_FUNCTION"
+          profiles:
+            - "ORA_STIG_PROFILE"
+      sga_target_min_gb: 1                            # FREE tier has limited memory
+      memory_target_required: false                   # Not needed for FREE
+      flashback_enabled: false                        # Not available in FREE tier
+      unified_auditing_enabled: false                 # Not required for FREE
+      job_queue_processes_min: 4                      # Lower threshold for FREE
+      jobs_enabled_min: 0                             # Not critical for FREE
+      scheduler_log_retention_days: 7                 # Relaxed for FREE
+      job_class_log_retention_days: 0                 # Optional for FREE
+      open_dblinks_max: 4

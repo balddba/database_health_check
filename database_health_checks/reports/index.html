@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oracle Health Check Reports</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .reports-section {
+            margin-bottom: 40px;
+        }
+
+        .reports-section h2 {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 15px;
+        }
+
+        .report-count {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            font-size: 1.1em;
+            color: #667eea;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .tab-button {
+            padding: 12px 25px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button:hover {
+            color: #667eea;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .database-group,
+        .run-group {
+            margin-bottom: 35px;
+        }
+
+        .database-group h3,
+        .run-group h3 {
+            font-size: 1.3em;
+            color: #667eea;
+            margin-bottom: 15px;
+            padding: 10px 0;
+            border-left: 4px solid #667eea;
+            padding-left: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            font-size: 0.85em;
+        }
+
+        table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        table tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .timestamp {
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .report-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .report-link:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+        .file-size {
+            color: #999;
+            font-size: 0.9em;
+            text-align: right;
+        }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 30px;
+            color: #1565c0;
+            font-size: 1em;
+            line-height: 1.6;
+        }
+
+        .footer {
+            background: #f3f4f6;
+            padding: 20px 40px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            table {
+                font-size: 0.9em;
+            }
+
+            table th, table td {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Oracle Health Check Reports</h1>
+            <p>Archive of all generated health check reports</p>
+        </div>
+
+        <div class="content">
+            <div class="reports-section">
+                <h2>Available Reports</h2>
+                <div class="report-count">
+                    <strong>11 report(s) available</strong>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab-button active" onclick="showTab('by-database')">By Database</button>
+                    <button class="tab-button" onclick="showTab('by-run')">By Run Date</button>
+                </div>
+
+                <!-- By Database View -->
+                <div id="by-database" class="tab-content active">
+                    
+                    <div class="database-group">
+                        <h3>📊 FREE</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Generated Date/Time</th>
+                                    <th>Report</th>
+                                    <th>File Size</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                
+                                <tr>
+                                    <td class="timestamp">2025-12-05 16:48:39</td>
+                                    <td><a href="oracle_health_check_FREE_20251205_164839.html" class="report-link">oracle_health_check_FREE_20251205_164839.html</a></td>
+                                    <td class="file-size">36.0 KB</td>
+                                </tr>
+                                
+                                <tr>
+                                    <td class="timestamp">2025-12-05 16:46:54</td>
+                                    <td><a href="oracle_health_check_FREE_20251205_164654.html" class="report-link">oracle_health_check_FREE_20251205_164654.html</a></td>
+                                    <td class="file-size">30.9 KB</td>
+                                </tr>
+                                
+                                <tr>
+                                    <td class="timestamp">2025-12-05 16:43:24</td>
+                                    <td><a href="oracle_health_check_FREE_20251205_164324.html" class="report-link">oracle_health_check_FREE_20251205_164324.html</a></td>
+                                    <td class="file-size">30.9 KB</td>
+                                </tr>
+                                
+                                <tr>
+                                    <td class="timestamp">2025-12-05 09:30:29</td>
+                                    <td><a href="oracle_health_check_FREE_20251205_093029.html" class="report-link">oracle_health_check_FREE_20251205_093029.html</a></td>
+                                    <td class="file-size">30.9 KB</td>
+                                </tr>
+                                
+                                <tr>
+                                    <td class="timestamp">2025-12-05 09:23:10</td>
+                                    <td><a href="oracle_health_check_FREE_20251205_092310.html" class="report-link">oracle_health_check_FREE_20251205_092310.html</a></td>
+                                    <td class="file-size">29.0 KB</td>
+                                </tr>
+                                
+                                <tr>
+                                    <td class="timestamp">2025-12-05 09:23:06</td>
+                                    <td><a href="oracle_health_check_FREE_20251205_092306.html" class="report-link">oracle_health_check_FREE_20251205_092306.html</a></td>
+                                    <td class="file-size">29.0 KB</td>
+                                </tr>
+                                
+                                <tr>
+                                    <td class="timestamp">2025-12-05 09:20:15</td>
+                                    <td><a href="oracle_health_check_FREE_20251205_092015.html" class="report-link">oracle_health_check_FREE_20251205_092015.html</a></td>
+                                    <td class="file-size">29.0 KB</td>
+                                </tr>
+                                
+                                <tr>
+                                    <td class="timestamp">2025-12-05 09:17:54</td>
+                                    <td><a href="oracle_health_check_FREE_20251205_091754.html" class="report-link">oracle_health_check_FREE_20251205_091754.html</a></td>
+                                    <td class="file-size">16.3 KB</td>
+                                </tr>
+                                
+                                <tr>
+                                    <td class="timestamp">2025-12-05 09:17:27</td>
+                                    <td><a href="oracle_health_check_FREE_20251205_091727.html" class="report-link">oracle_health_check_FREE_20251205_091727.html</a></td>
+                                    <td class="file-size">16.3 KB</td>
+                                </tr>
+                                
+                                <tr>
+                                    <td class="timestamp">2025-12-05 09:12:27</td>
+                                    <td><a href="oracle_health_check_FREE_20251205_091227.html" class="report-link">oracle_health_check_FREE_20251205_091227.html</a></td>
+                                    <td class="file-size">15.1 KB</td>
+                                </tr>
+                                
+                                <tr>
+                                    <td class="timestamp">2025-12-05 09:12:24</td>
+                                    <td><a href="oracle_health_check_FREE_20251205_091224.html" class="report-link">oracle_health_check_FREE_20251205_091224.html</a></td>
+                                    <td class="file-size">15.1 KB</td>
+                                </tr>
+                                
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                </div>
+
+                <!-- By Run View -->
+                <div id="by-run" class="tab-content">
+                    
+                    <div class="run-group">
+                        <h3>🕐 Run: 2025-12-05 16:48:39</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Database</th>
+                                    <th>Report</th>
+                                    <th>File Size</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                
+                                <tr>
+                                    <td><strong>FREE</strong></td>
+                                    <td><a href="oracle_health_check_FREE_20251205_164839.html" class="report-link">oracle_health_check_FREE_20251205_164839.html</a></td>
+                                    <td class="file-size">36.0 KB</td>
+                                </tr>
+                                
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="run-group">
+                        <h3>🕐 Run: 2025-12-05 16:46:54</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Database</th>
+                                    <th>Report</th>
+                                    <th>File Size</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                
+                                <tr>
+                                    <td><strong>FREE</strong></td>
+                                    <td><a href="oracle_health_check_FREE_20251205_164654.html" class="report-link">oracle_health_check_FREE_20251205_164654.html</a></td>
+                                    <td class="file-size">30.9 KB</td>
+                                </tr>
+                                
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="run-group">
+                        <h3>🕐 Run: 2025-12-05 16:43:24</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Database</th>
+                                    <th>Report</th>
+                                    <th>File Size</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                
+                                <tr>
+                                    <td><strong>FREE</strong></td>
+                                    <td><a href="oracle_health_check_FREE_20251205_164324.html" class="report-link">oracle_health_check_FREE_20251205_164324.html</a></td>
+                                    <td class="file-size">30.9 KB</td>
+                                </tr>
+                                
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="run-group">
+                        <h3>🕐 Run: 2025-12-05 09:30:29</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Database</th>
+                                    <th>Report</th>
+                                    <th>File Size</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                
+                                <tr>
+                                    <td><strong>FREE</strong></td>
+                                    <td><a href="oracle_health_check_FREE_20251205_093029.html" class="report-link">oracle_health_check_FREE_20251205_093029.html</a></td>
+                                    <td class="file-size">30.9 KB</td>
+                                </tr>
+                                
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="run-group">
+                        <h3>🕐 Run: 2025-12-05 09:23:10</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Database</th>
+                                    <th>Report</th>
+                                    <th>File Size</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                
+                                <tr>
+                                    <td><strong>FREE</strong></td>
+                                    <td><a href="oracle_health_check_FREE_20251205_092310.html" class="report-link">oracle_health_check_FREE_20251205_092310.html</a></td>
+                                    <td class="file-size">29.0 KB</td>
+                                </tr>
+                                
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="run-group">
+                        <h3>🕐 Run: 2025-12-05 09:23:06</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Database</th>
+                                    <th>Report</th>
+                                    <th>File Size</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                
+                                <tr>
+                                    <td><strong>FREE</strong></td>
+                                    <td><a href="oracle_health_check_FREE_20251205_092306.html" class="report-link">oracle_health_check_FREE_20251205_092306.html</a></td>
+                                    <td class="file-size">29.0 KB</td>
+                                </tr>
+                                
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="run-group">
+                        <h3>🕐 Run: 2025-12-05 09:20:15</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Database</th>
+                                    <th>Report</th>
+                                    <th>File Size</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                
+                                <tr>
+                                    <td><strong>FREE</strong></td>
+                                    <td><a href="oracle_health_check_FREE_20251205_092015.html" class="report-link">oracle_health_check_FREE_20251205_092015.html</a></td>
+                                    <td class="file-size">29.0 KB</td>
+                                </tr>
+                                
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="run-group">
+                        <h3>🕐 Run: 2025-12-05 09:17:54</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Database</th>
+                                    <th>Report</th>
+                                    <th>File Size</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                
+                                <tr>
+                                    <td><strong>FREE</strong></td>
+                                    <td><a href="oracle_health_check_FREE_20251205_091754.html" class="report-link">oracle_health_check_FREE_20251205_091754.html</a></td>
+                                    <td class="file-size">16.3 KB</td>
+                                </tr>
+                                
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="run-group">
+                        <h3>🕐 Run: 2025-12-05 09:17:27</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Database</th>
+                                    <th>Report</th>
+                                    <th>File Size</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                
+                                <tr>
+                                    <td><strong>FREE</strong></td>
+                                    <td><a href="oracle_health_check_FREE_20251205_091727.html" class="report-link">oracle_health_check_FREE_20251205_091727.html</a></td>
+                                    <td class="file-size">16.3 KB</td>
+                                </tr>
+                                
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="run-group">
+                        <h3>🕐 Run: 2025-12-05 09:12:27</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Database</th>
+                                    <th>Report</th>
+                                    <th>File Size</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                
+                                <tr>
+                                    <td><strong>FREE</strong></td>
+                                    <td><a href="oracle_health_check_FREE_20251205_091227.html" class="report-link">oracle_health_check_FREE_20251205_091227.html</a></td>
+                                    <td class="file-size">15.1 KB</td>
+                                </tr>
+                                
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="run-group">
+                        <h3>🕐 Run: 2025-12-05 09:12:24</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Database</th>
+                                    <th>Report</th>
+                                    <th>File Size</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                
+                                <tr>
+                                    <td><strong>FREE</strong></td>
+                                    <td><a href="oracle_health_check_FREE_20251205_091224.html" class="report-link">oracle_health_check_FREE_20251205_091224.html</a></td>
+                                    <td class="file-size">15.1 KB</td>
+                                </tr>
+                                
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                </div>
+
+                <div class="info-box">
+                    <strong>ℹ️ How to use:</strong> Switch between "By Database" and "By Run Date" views to organize reports. Click on any report to view detailed health check results.
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Oracle Health Check Report Index | Reports are stored with timestamps for easy tracking</p>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+            
+            // Remove active class from all buttons
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(button => button.classList.remove('active'));
+            
+            // Show selected tab and mark button as active
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

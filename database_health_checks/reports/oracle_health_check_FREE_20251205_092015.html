@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oracle Health Check Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .header-info {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header-info-item {
+            text-align: center;
+        }
+
+        .header-info-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .header-info-value {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .summary-section {
+            margin-bottom: 40px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 25px;
+            border-radius: 8px;
+            border-left: 5px solid #667eea;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .summary-card.healthy {
+            border-left-color: #10b981;
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        }
+
+        .summary-card.degraded {
+            border-left-color: #f59e0b;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        }
+
+        .summary-card.unhealthy {
+            border-left-color: #ef4444;
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+        }
+
+        .summary-card h3 {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .summary-card .percentage {
+            font-size: 2.2em;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+
+        .summary-card .passed {
+            color: #10b981;
+        }
+
+        .summary-card .failed {
+            color: #ef4444;
+        }
+
+        .summary-card .status {
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            margin-top: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .category-section {
+            margin-bottom: 35px;
+        }
+
+        .category-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #667eea;
+            padding: 15px 0;
+            border-bottom: 3px solid #667eea;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            font-size: 0.85em;
+        }
+
+        table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        table tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .status-pass {
+            background-color: #d1fae5;
+            color: #065f46;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 20px;
+            text-align: center;
+            display: inline-block;
+            font-size: 0.85em;
+        }
+
+        .status-fail {
+            background-color: #fee2e2;
+            color: #991b1b;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 20px;
+            text-align: center;
+            display: inline-block;
+            font-size: 0.85em;
+        }
+
+        .override-badge {
+            background-color: #dbeafe;
+            color: #1e40af;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            margin-left: 5px;
+            font-weight: 600;
+        }
+
+        .na-value {
+            color: #999;
+            font-style: italic;
+        }
+
+        .footer {
+            background: #f3f4f6;
+            padding: 20px 40px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .header-info {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            table {
+                font-size: 0.9em;
+            }
+
+            table th, table td {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Oracle Database Health Check Report</h1>
+            <div class="header-info">
+                <div class="header-info-item">
+                    <div class="header-info-label">Generated</div>
+                    <div class="header-info-value">2025-12-05 09:20:15</div>
+                </div>
+                <div class="header-info-item">
+                    <div class="header-info-label">Host(s)</div>
+                    <div class="header-info-value">oracle23ai.aaronslab.net</div>
+                </div>
+                <div class="header-info-item">
+                    <div class="header-info-label">Total Checks</div>
+                    <div class="header-info-value">15</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Database Information Section -->
+            <div class="database-info-section" style="margin-bottom: 30px; padding: 20px; background: #f9fafb; border-radius: 6px;">
+                <h2 style="font-size: 1.3em; color: #333; margin-bottom: 15px;">Database Information</h2>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                    <div>
+                        <p style="margin: 8px 0;"><strong>Database Name:</strong> FREE</p>
+                        <p style="margin: 8px 0;"><strong>Hostname:</strong> oracle23ai.aaronslab.net</p>
+                        <p style="margin: 8px 0;"><strong>Port:</strong> 1521</p>
+                    </div>
+                    <div>
+                        <p style="margin: 8px 0;"><strong>Service Name:</strong> FREE</p>
+                        <p style="margin: 8px 0;"><strong>Oracle Version:</strong> Oracle Database 23ai Free Release 23.0.0.0.0 - Develop, Learn, and Run for Free</p>
+                        <p style="margin: 8px 0;"><strong>Overall Score:</strong> <span style="font-size: 1.3em; font-weight: bold; color: #10b981;">80%</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Section -->
+            <div class="summary-section">
+                <h2 style="font-size: 1.5em; color: #333; margin-bottom: 20px;">Summary</h2>
+                <div class="summary-grid">
+                <div class="summary-card degraded">
+                    <h3>FREE</h3>
+                    <div class="percentage"><span class="passed">80%</span></div>
+                    <div style="font-size: 0.95em; color: #666;">
+                        <span class="passed">12</span> passed /
+                        <span class="failed">3</span> failed
+                    </div>
+                    <div class="status">DEGRADED</div>
+                </div>
+                </div>
+             </div>
+
+                        <!-- Password Validation Section -->
+             <div class="category-section">
+                 <div class="category-title">Password Validation Functions</div>
+                 <table>
+                     <thead>
+                         <tr>
+                             <th>Profile</th>
+                             <th>Required Function</th>
+                             <th>Actual Function</th>
+                             <th>Status</th>
+                         </tr>
+                     </thead>
+                     <tbody>
+                                    <tr>
+                             <td>DEFAULT</td>
+                             <td>ORA12C_VERIFY_FUNCTION</td>
+                             <td>NULL</td>
+                             <td><span class="status-fail">✗ FAIL</span></td>
+                         </tr>
+                                    <tr>
+                             <td>ORA_CIS_PROFILE</td>
+                             <td>ORA12C_VERIFY_FUNCTION</td>
+                             <td>ORA12C_VERIFY_FUNCTION</td>
+                             <td><span class="status-pass">✓ PASS</span></td>
+                         </tr>
+                                    <tr>
+                             <td>ORA_STIG_PROFILE</td>
+                             <td>ORA12C_STIG_VERIFY_FUNCTION</td>
+                             <td>ORA12C_STIG_VERIFY_FUNCTION</td>
+                             <td><span class="status-pass">✓ PASS</span></td>
+                         </tr>
+                                </tbody>
+                 </table>
+                 <div style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 4px; font-size: 0.9em;">
+                     <strong>Result:</strong> 2/3 profiles passed
+                 </div>
+             </div>
+
+                        <!-- Scheduler Jobs Section -->
+             <div class="category-section">
+                 <div class="category-title">Scheduler Jobs</div>
+                 <table>
+                     <thead>
+                         <tr>
+                             <th>Job Name</th>
+                             <th>Type</th>
+                             <th>Class</th>
+                             <th>Enabled</th>
+                             <th>State</th>
+                             <th>Schedule</th>
+                         </tr>
+                     </thead>
+                     <tbody>
+                                    <tr>
+                             <td><strong>BSLN_MAINTAIN_STATS_JOB</strong></td>
+                             <td>Unknown</td>
+                             <td>DEFAULT_JOB_CLASS</td>
+                             <td><span class="status-pass">YES</span></td>
+                             <td>SCHEDULED</td>
+                             <td style="font-size: 0.85em;">None</td>
+                         </tr>
+                                    <tr>
+                             <td><strong>CLEANUP_NON_EXIST_OBJ</strong></td>
+                             <td>PLSQL_BLOCK</td>
+                             <td>SCHED$_LOG_ON_ERRORS_CLASS</td>
+                             <td><span class="status-pass">YES</span></td>
+                             <td>SCHEDULED</td>
+                             <td style="font-size: 0.85em;">FREQ = HOURLY; INTERVAL = 12</td>
+                         </tr>
+                                    <tr>
+                             <td><strong>CLEANUP_ONLINE_IND_BUILD</strong></td>
+                             <td>PLSQL_BLOCK</td>
+                             <td>SCHED$_LOG_ON_ERRORS_CLASS</td>
+                             <td><span class="status-pass">YES</span></td>
+                             <td>SCHEDULED</td>
+                             <td style="font-size: 0.85em;">FREQ = HOURLY; INTERVAL = 1</td>
+                         </tr>
+                                    <tr>
+                             <td><strong>CLEANUP_ONLINE_PMO</strong></td>
+                             <td>PLSQL_BLOCK</td>
+                             <td>SCHED$_LOG_ON_ERRORS_CLASS</td>
+                             <td><span class="status-pass">YES</span></td>
+                             <td>SCHEDULED</td>
+                             <td style="font-size: 0.85em;">FREQ = HOURLY; INTERVAL = 1</td>
+                         </tr>
+                                    <tr>
+                             <td><strong>CLEANUP_TAB_IOT_PMO</strong></td>
+                             <td>PLSQL_BLOCK</td>
+                             <td>SCHED$_LOG_ON_ERRORS_CLASS</td>
+                             <td><span class="status-pass">YES</span></td>
+                             <td>SCHEDULED</td>
+                             <td style="font-size: 0.85em;">FREQ = HOURLY; INTERVAL = 1</td>
+                         </tr>
+                                    <tr>
+                             <td><strong>CLEANUP_TOBE_DROPPED_IDX</strong></td>
+                             <td>PLSQL_BLOCK</td>
+                             <td>SCHED$_LOG_ON_ERRORS_CLASS</td>
+                             <td><span class="status-pass">YES</span></td>
+                             <td>SCHEDULED</td>
+                             <td style="font-size: 0.85em;">FREQ = Daily; INTERVAL = 1</td>
+                         </tr>
+                                    <tr>
+                             <td><strong>CLEANUP_TRANSIENT_PKG</strong></td>
+                             <td>PLSQL_BLOCK</td>
+                             <td>SCHED$_LOG_ON_ERRORS_CLASS</td>
+                             <td><span class="status-pass">YES</span></td>
+                             <td>SCHEDULED</td>
+                             <td style="font-size: 0.85em;">FREQ = HOURLY; INTERVAL = 2</td>
+                         </tr>
+                                    <tr>
+                             <td><strong>CLEANUP_TRANSIENT_TYPE</strong></td>
+                             <td>PLSQL_BLOCK</td>
+                             <td>SCHED$_LOG_ON_ERRORS_CLASS</td>
+                             <td><span class="status-pass">YES</span></td>
+                             <td>SCHEDULED</td>
+                             <td style="font-size: 0.85em;">FREQ = HOURLY; INTERVAL = 2</td>
+                         </tr>
+                                    <tr>
+                             <td><strong>FILE_WATCHER</strong></td>
+                             <td>Unknown</td>
+                             <td>SCHED$_LOG_ON_ERRORS_CLASS</td>
+                             <td><span class="status-fail">NO</span></td>
+                             <td>DISABLED</td>
+                             <td style="font-size: 0.85em;">None</td>
+                         </tr>
+                                    <tr>
+                             <td><strong>HM_CREATE_OFFLINE_DICTIONARY</strong></td>
+                             <td>STORED_PROCEDURE</td>
+                             <td>DEFAULT_JOB_CLASS</td>
+                             <td><span class="status-fail">NO</span></td>
+                             <td>DISABLED</td>
+                             <td style="font-size: 0.85em;">None</td>
+                         </tr>
+                                    <tr>
+                             <td><strong>LOAD_OPATCH_INVENTORY</strong></td>
+                             <td>PLSQL_BLOCK</td>
+                             <td>DEFAULT_JOB_CLASS</td>
+                             <td><span class="status-fail">NO</span></td>
+                             <td>DISABLED</td>
+                             <td style="font-size: 0.85em;">None</td>
+                         </tr>
+                                    <tr>
+                             <td><strong>LOGMNR_AUTO_DICTIONARY_BUILD</strong></td>
+                             <td>STORED_PROCEDURE</td>
+                             <td>DEFAULT_JOB_CLASS</td>
+                             <td><span class="status-pass">YES</span></td>
+                             <td>SCHEDULED</td>
+                             <td style="font-size: 0.85em;">FREQ=DAILY;BYHOUR=02</td>
+                         </tr>
+                                    <tr>
+                             <td><strong>ORA$AUTOTASK_CLEAN</strong></td>
+                             <td>Unknown</td>
+                             <td>ORA$AUTOTASK_JOB_CLASS</td>
+                             <td><span class="status-pass">YES</span></td>
+                             <td>SCHEDULED</td>
+                             <td style="font-size: 0.85em;">None</td>
+                         </tr>
+                                    <tr>
+                             <td><strong>ORA$PREPLUGIN_BACKUP_JOB</strong></td>
+                             <td>Unknown</td>
+                             <td>DEFAULT_JOB_CLASS</td>
+                             <td><span class="status-fail">NO</span></td>
+                             <td>DISABLED</td>
+                             <td style="font-size: 0.85em;">None</td>
+                         </tr>
+                                    <tr>
+                             <td><strong>ORA$_ATSK_ADVPURGE</strong></td>
+                             <td>STORED_PROCEDURE</td>
+                             <td>ORA$AUTOTASK_JOB_CLASS</td>
+                             <td><span class="status-fail">NO</span></td>
+                             <td>DISABLED</td>
+                             <td style="font-size: 0.85em;">None</td>
+                         </tr>
+                                    <tr>
+                             <td><strong>ORA$_ATSK_AUTOSTS</strong></td>
+                             <td>STORED_PROCEDURE</td>
+                             <td>ORA$AUTOTASK_JOB_CLASS</td>
+                             <td><span class="status-fail">NO</span></td>
+                             <td>DISABLED</td>
+                             <td style="font-size: 0.85em;">None</td>
+                         </tr>
+                                    <tr>
+                             <td><strong>ORA$_ATSK_EVTPRG</strong></td>
+                             <td>STORED_PROCEDURE</td>
+                             <td>ORA$AUTOTASK_JOB_CLASS</td>
+                             <td><span class="status-fail">NO</span></td>
+                             <td>DISABLED</td>
+                             <td style="font-size: 0.85em;">None</td>
+                         </tr>
+                                    <tr>
+                             <td><strong>ORA$_ATSK_HUBPRG</strong></td>
+                             <td>STORED_PROCEDURE</td>
+                             <td>ORA$AUTOTASK_JOB_CLASS</td>
+                             <td><span class="status-fail">NO</span></td>
+                             <td>DISABLED</td>
+                             <td style="font-size: 0.85em;">None</td>
+                         </tr>
+                                    <tr>
+                             <td><strong>ORA$_ATSK_SMPURGE</strong></td>
+                             <td>STORED_PROCEDURE</td>
+                             <td>ORA$AUTOTASK_JOB_CLASS</td>
+                             <td><span class="status-fail">NO</span></td>
+                             <td>DISABLED</td>
+                             <td style="font-size: 0.85em;">None</td>
+                         </tr>
+                                    <tr>
+                             <td><strong>PMO_DEFERRED_GIDX_MAINT_JOB</strong></td>
+                             <td>Unknown</td>
+                             <td>SCHED$_LOG_ON_ERRORS_CLASS</td>
+                             <td><span class="status-pass">YES</span></td>
+                             <td>SCHEDULED</td>
+                             <td style="font-size: 0.85em;">None</td>
+                         </tr>
+                                    <tr>
+                             <td><strong>PURGE_LOG</strong></td>
+                             <td>Unknown</td>
+                             <td>DEFAULT_JOB_CLASS</td>
+                             <td><span class="status-pass">YES</span></td>
+                             <td>SCHEDULED</td>
+                             <td style="font-size: 0.85em;">None</td>
+                         </tr>
+                                    <tr>
+                             <td><strong>XMLDB_NFS_CLEANUP_JOB</strong></td>
+                             <td>STORED_PROCEDURE</td>
+                             <td>XMLDB_NFS_JOBCLASS</td>
+                             <td><span class="status-fail">NO</span></td>
+                             <td>DISABLED</td>
+                             <td style="font-size: 0.85em;">Freq=minutely;interval=5</td>
+                         </tr>
+                                </tbody>
+                 </table>
+                 <div style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 4px; font-size: 0.9em;">
+                     <strong>Total Jobs:</strong> 22 | <strong>Log Retention:</strong> 0 days
+                 </div>
+             </div>
+
+                        <!-- Memory Configuration Section -->
+            <div class="category-section">
+                <div class="category-title">Memory Configuration</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Database</th>
+                            <th>Check Name</th>
+                            <th>Status</th>
+                            <th>Actual Value</th>
+                            <th>Expected Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>FREE</td>
+                            <td>SGA_TARGET_MIN</td>
+                            <td><span class="status-pass">✓ PASS</span></td>
+                            <td>1.015625</td>
+                            <td>>= 1<span class="override-badge">OVERRIDE</span></td>
+                        </tr>
+                        <tr>
+                            <td>FREE</td>
+                            <td>SGA_MAX_SIZE</td>
+                            <td><span class="status-pass">✓ PASS</span></td>
+                            <td>1090519040</td>
+                            <td>Set/Enabled</td>
+                        </tr>
+                        <tr>
+                            <td>FREE</td>
+                            <td>DISM_ENABLED</td>
+                            <td><span class="status-pass">✓ PASS</span></td>
+                            <td>True</td>
+                            <td>True</td>
+                        </tr>
+                        <tr>
+                            <td>FREE</td>
+                            <td>PGA_AGGREGATE_TARGET</td>
+                            <td><span class="status-pass">✓ PASS</span></td>
+                            <td>361758720</td>
+                            <td>Set/Enabled</td>
+                        </tr>
+                        <tr>
+                            <td>FREE</td>
+                            <td>PGA_AGGREGATE_LIMIT</td>
+                            <td><span class="status-pass">✓ PASS</span></td>
+                            <td>2147483648</td>
+                            <td>Set/Enabled</td>
+                        </tr>
+                        <tr>
+                            <td>FREE</td>
+                            <td>MEMORY_TARGET</td>
+                            <td><span class="status-pass">✓ PASS</span></td>
+                            <td>N/A</td>
+                            <td>Not Required<span class="override-badge">OVERRIDE</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Feature Configuration Section -->
+            <div class="category-section">
+                <div class="category-title">Feature Configuration</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Database</th>
+                            <th>Check Name</th>
+                            <th>Status</th>
+                            <th>Actual Value</th>
+                            <th>Expected Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>FREE</td>
+                            <td>FLASHBACK_ENABLED</td>
+                            <td><span class="status-pass">✓ PASS</span></td>
+                            <td>False</td>
+                            <td>False<span class="override-badge">OVERRIDE</span></td>
+                        </tr>
+                        <tr>
+                            <td>FREE</td>
+                            <td>UNIFIED_AUDITING</td>
+                            <td><span class="status-pass">✓ PASS</span></td>
+                            <td>False</td>
+                            <td>False<span class="override-badge">OVERRIDE</span></td>
+                        </tr>
+                        <tr>
+                            <td>FREE</td>
+                            <td>PASSWORD_VALIDATION_FUNCTION</td>
+                            <td><span class="status-fail">✗ FAIL</span></td>
+                            <td>Wrong function: DEFAULT(NULL)</td>
+                            <td>ORA12C_VERIFY_FUNCTION on 2 profile(s)</td>
+                        </tr>
+                        <tr>
+                            <td>FREE</td>
+                            <td>PASSWORD_VALIDATION_FUNCTION</td>
+                            <td><span class="status-pass">✓ PASS</span></td>
+                            <td>All 1 profile(s) configured</td>
+                            <td>ORA12C_STIG_VERIFY_FUNCTION on 1 profile(s)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Database Objects Section -->
+            <div class="category-section">
+                <div class="category-title">Database Objects</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Database</th>
+                            <th>Check Name</th>
+                            <th>Status</th>
+                            <th>Actual Value</th>
+                            <th>Expected Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>FREE</td>
+                            <td>OPEN_DBLINKS</td>
+                            <td><span class="status-pass">✓ PASS</span></td>
+                            <td>4</td>
+                            <td>>= 4<span class="override-badge">OVERRIDE</span></td>
+                        </tr>
+                        <tr>
+                            <td>FREE</td>
+                            <td>JOBS_ENABLED</td>
+                            <td><span class="status-pass">✓ PASS</span></td>
+                            <td>12</td>
+                            <td>>= 0<span class="override-badge">OVERRIDE</span></td>
+                        </tr>
+                        <tr>
+                            <td>FREE</td>
+                            <td>JOB_QUEUE_PROCESSES</td>
+                            <td><span class="status-pass">✓ PASS</span></td>
+                            <td>4</td>
+                            <td>>= 4<span class="override-badge">OVERRIDE</span></td>
+                        </tr>
+                        <tr>
+                            <td>FREE</td>
+                            <td>SCHEDULER_LOG_RETENTION</td>
+                            <td><span class="status-fail">✗ FAIL</span></td>
+                            <td>Not set</td>
+                            <td>>= 30 days<span class="override-badge">OVERRIDE</span></td>
+                        </tr>
+                        <tr>
+                            <td>FREE</td>
+                            <td>JOB_CLASS_LOG_RETENTION</td>
+                            <td><span class="status-fail">✗ FAIL</span></td>
+                            <td>7 class(es) without retention: AQ$_PROPAGATION_JOB_CLASS, DBMS_JOB$, DEFAULT_IN_MEMORY_JOB_CLASS (+4 more)</td>
+                            <td>All job classes with log retention >= 1 day(s)<span class="override-badge">OVERRIDE</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+        <div class="footer">
+            <p>Oracle Health Check Report | Generated with OracleHealthCheck</p>
+        </div>
+    </div>
+</body>
+</html>
