@@ -6,7 +6,7 @@ import pkgutil
 from pathlib import Path
 from typing import Dict
 
-from database_health_checks.checks import (
+from database_health_checks.oracle_checks import (
     archivelog_mode_check,
     audit_trail_purge_job_check,
     control_file_multiplexing_check,
@@ -97,10 +97,10 @@ class CheckRegistry:
         }
 
     def _load_checks_dynamically(self) -> None:
-        """Dynamically discover and load all checks from the checks directory."""
-        checks_path = Path(__file__).parent / "checks"
+        """Dynamically discover and load all checks from the oracle_checks directory."""
+        checks_path = Path(__file__).parent / "oracle_checks"
 
-        # Iterate through all modules in the checks package
+        # Iterate through all modules in the oracle_checks package
         for _, module_name, _ in pkgutil.iter_modules([str(checks_path)]):
             if module_name.startswith("_") or module_name == "validation_check":
                 # Skip private modules and the base validation_check module
@@ -109,7 +109,7 @@ class CheckRegistry:
             try:
                 # Dynamically import the module
                 module = importlib.import_module(
-                    f".checks.{module_name}", package="database_health_checks"
+                    f".oracle_checks.{module_name}", package="database_health_checks"
                 )
 
                 # Try to instantiate checks from the module
