@@ -14,7 +14,7 @@ def create_check() -> ValidationCheck:
     return ValidationCheck(
         name="db_files_min",
         check_name="DB_FILES_MIN",
-        category=CheckCategory.MEMORY_CONFIGURATION,
+        category=CheckCategory.STORAGE_DISK_MANAGEMENT,
         description="The DB_FILES parameter should be set to at least 2500 to support a sufficient number of database files.",
         query="SELECT value FROM v$parameter WHERE name = 'db_files'",
         validation_type=ValidationType.MINIMUM,

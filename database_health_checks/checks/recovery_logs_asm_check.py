@@ -13,7 +13,7 @@ class RecoveryLogsASMCheck(CheckBaseModel):
         super().__init__(
             name="recovery_logs_asm",
             check_name="RECOVERY_LOGS_ASM",
-            category=CheckCategory.DATABASE_OBJECTS,
+            category=CheckCategory.STORAGE_DISK_MANAGEMENT,
             description="Recovery logs (redo logs) should be stored in the +RECO ASM disk group.",
         )
 

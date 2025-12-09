@@ -15,7 +15,7 @@ class JobClassLogRetentionCheck(CheckBaseModel):
         super().__init__(
             name="job_class_log_retention_days",
             check_name="JOB_CLASS_LOG_RETENTION",
-            category=CheckCategory.DATABASE_OBJECTS,
+            category=CheckCategory.LOGGING_MONITORING,
             description="All job classes should have log retention configured.",
         )
 

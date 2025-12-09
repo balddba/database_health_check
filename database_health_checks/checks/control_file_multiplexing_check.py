@@ -13,7 +13,7 @@ class ControlFileMultiplexingCheck(CheckBaseModel):
         super().__init__(
             name="control_file_multiplexing",
             check_name="CONTROL_FILE_MULTIPLEXING",
-            category=CheckCategory.DATABASE_OBJECTS,
+            category=CheckCategory.HIGH_AVAILABILITY_CLUSTER,
             description="Control files should be multiplexed across at least two different disk groups for high availability.",
         )
 

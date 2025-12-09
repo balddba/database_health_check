@@ -13,7 +13,7 @@ class RedoLogSizeCheck(CheckBaseModel):
         super().__init__(
             name="redo_log_size",
             check_name="REDO_LOG_SIZE",
-            category=CheckCategory.DATABASE_OBJECTS,
+            category=CheckCategory.STORAGE_DISK_MANAGEMENT,
             description="Online redo logs should be at least 1GB in size for optimal performance.",
         )
 

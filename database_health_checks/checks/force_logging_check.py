@@ -35,7 +35,7 @@ def create_check() -> ValidationCheck:
     return ValidationCheck(
         name="force_logging_enabled",
         check_name="FORCE_LOGGING",
-        category=CheckCategory.FEATURE_CONFIGURATION,
+        category=CheckCategory.BACKUP_RECOVERY,
         description="Force logging should be enabled to ensure all changes are logged.",
         query="SELECT force_logging FROM v$database",
         validation_type=ValidationType.EQUALS,

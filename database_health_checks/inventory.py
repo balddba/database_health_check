@@ -62,7 +62,7 @@ class Inventory:
         """
         if config_path is None:
             config_path = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "databases.example.yaml"
+                os.path.dirname(os.path.abspath(__file__)), "databases.yaml"
             )
 
         if not os.path.exists(config_path):

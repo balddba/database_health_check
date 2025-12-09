@@ -15,7 +15,7 @@ class AuditTrailPurgeJobCheck(CheckBaseModel):
         super().__init__(
             name="audit_trail_purge_job",
             check_name="AUDIT_TRAIL_PURGE_JOB",
-            category=CheckCategory.DATABASE_OBJECTS,
+            category=CheckCategory.LOGGING_MONITORING,
             description="A scheduler log purge job should be enabled to prevent audit trail bloat.",
         )
 

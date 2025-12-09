@@ -35,7 +35,7 @@ def create_check() -> ValidationCheck:
     return ValidationCheck(
         name="flashback_enabled",
         check_name="FLASHBACK_ENABLED",
-        category=CheckCategory.FEATURE_CONFIGURATION,
+        category=CheckCategory.BACKUP_RECOVERY,
         description="Flashback database should be enabled for recovery capabilities.",
         query="SELECT flashback_on FROM v$database",
         validation_type=ValidationType.EQUALS,

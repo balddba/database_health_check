@@ -13,7 +13,7 @@ class DatafilesASMCheck(CheckBaseModel):
         super().__init__(
             name="datafiles_asm",
             check_name="DATAFILES_ASM",
-            category=CheckCategory.DATABASE_OBJECTS,
+            category=CheckCategory.STORAGE_DISK_MANAGEMENT,
             description="All datafiles should be stored in the +DATA ASM disk group.",
         )
 

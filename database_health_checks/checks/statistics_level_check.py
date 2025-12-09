@@ -26,7 +26,7 @@ def create_check() -> ValidationCheck:
     return ValidationCheck(
         name="statistics_level",
         check_name="STATISTICS_LEVEL",
-        category=CheckCategory.MEMORY_CONFIGURATION,
+        category=CheckCategory.PERFORMANCE_TUNING,
         description="Statistics level should be set to TYPICAL for optimal performance monitoring.",
         query="SELECT value FROM v$parameter WHERE name = 'statistics_level'",
         validation_type=ValidationType.EQUALS,

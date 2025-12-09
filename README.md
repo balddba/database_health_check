@@ -32,6 +32,8 @@ uv sync
 
 ### Configuration
 
+⚠️ **SECURITY WARNING**: Never commit actual database credentials to version control. The `databases.yaml` file is intentionally ignored by git.
+
 1. **Configure Databases**
 
    Create/edit `database_health_checks/databases.yaml`:
@@ -55,12 +57,16 @@ uv sync
        auth_mode: default
    ```
 
+   **Important**: Always use environment variables for passwords (syntax: `${VAR_NAME}`). Never hardcode passwords in `databases.yaml`.
+
 2. **Set Environment Variables**
 
    ```bash
    export ORACLE_PROD_PASSWORD="your_prod_password"
    export ORACLE_DEV_PASSWORD="your_dev_password"
    ```
+
+   For production, use a secure secrets management system (e.g., HashiCorp Vault, AWS Secrets Manager, etc.)
 
 3. **Configure Validation Rules** (optional)
 

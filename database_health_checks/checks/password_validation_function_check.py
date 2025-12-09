@@ -15,7 +15,7 @@ class PasswordValidationFunctionCheck(CheckBaseModel):
         super().__init__(
             name="password_validation_function",
             check_name="PASSWORD_VALIDATION_FUNCTION",
-            category=CheckCategory.FEATURE_CONFIGURATION,
+            category=CheckCategory.SECURITY_AUDITING,
             description="Required profiles should use the specified password validation function.",
         )
 

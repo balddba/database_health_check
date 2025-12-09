@@ -34,7 +34,7 @@ def create_check() -> ValidationCheck:
     return ValidationCheck(
         name="unified_auditing_enabled",
         check_name="UNIFIED_AUDITING",
-        category=CheckCategory.FEATURE_CONFIGURATION,
+        category=CheckCategory.SECURITY_AUDITING,
         description="Unified Auditing should be enabled for comprehensive audit logging.",
         query="SELECT value FROM v$parameter WHERE name = 'audit_trail'",
         validation_type=ValidationType.EQUALS,

@@ -13,7 +13,7 @@ class SchedulerLogRetentionCheck(CheckBaseModel):
         super().__init__(
             name="scheduler_log_retention_days",
             check_name="SCHEDULER_LOG_RETENTION",
-            category=CheckCategory.DATABASE_OBJECTS,
+            category=CheckCategory.LOGGING_MONITORING,
             description="Scheduler logs should be retained for at least 30 days for the audit trail.",
         )
 

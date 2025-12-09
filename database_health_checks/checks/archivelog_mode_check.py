@@ -35,7 +35,7 @@ def create_check() -> ValidationCheck:
     return ValidationCheck(
         name="archivelog_mode_enabled",
         check_name="ARCHIVELOG_MODE",
-        category=CheckCategory.FEATURE_CONFIGURATION,
+        category=CheckCategory.BACKUP_RECOVERY,
         description="Archivelog mode should be enabled for data protection and recovery.",
         query="SELECT log_mode FROM v$database",
         validation_type=ValidationType.EQUALS,

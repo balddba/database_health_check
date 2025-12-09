@@ -13,7 +13,7 @@ class PDBSaveStateCheck(CheckBaseModel):
         super().__init__(
             name="pdb_save_state",
             check_name="PDB_SAVE_STATE",
-            category=CheckCategory.DATABASE_OBJECTS,
+            category=CheckCategory.HIGH_AVAILABILITY_CLUSTER,
             description="For CDB: Checks that all PDBs have saved states configured. For non-CDB: N/A.",
         )
 

@@ -13,7 +13,7 @@ class ManagementPackCheck(CheckBaseModel):
         super().__init__(
             name="management_pack",
             check_name="MANAGEMENT_PACK",
-            category=CheckCategory.FEATURE_CONFIGURATION,
+            category=CheckCategory.LICENSING_OPTIONS,
             description="Management pack and tuning pack should be enabled for optimal monitoring and performance tuning.",
         )
 

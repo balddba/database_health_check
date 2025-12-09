@@ -13,7 +13,7 @@ class SchedulerJobsStatusCheck(CheckBaseModel):
         super().__init__(
             name="scheduler_jobs_status",
             check_name="SCHEDULER_JOBS_STATUS",
-            category=CheckCategory.DATABASE_OBJECTS,
+            category=CheckCategory.LOGGING_MONITORING,
             description="Reports on scheduler jobs status. Alerts if purge/cleanup jobs are disabled.",
         )
 

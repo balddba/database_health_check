@@ -26,7 +26,7 @@ def create_check() -> ValidationCheck:
     return ValidationCheck(
         name="optimizer_mode",
         check_name="OPTIMIZER_MODE",
-        category=CheckCategory.MEMORY_CONFIGURATION,
+        category=CheckCategory.PERFORMANCE_TUNING,
         description="Optimizer mode should be set to ALL_ROWS for optimal query execution.",
         query="SELECT value FROM v$parameter WHERE name = 'optimizer_mode'",
         validation_type=ValidationType.EQUALS,

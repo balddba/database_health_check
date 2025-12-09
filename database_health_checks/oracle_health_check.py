@@ -1171,6 +1171,19 @@ validation_rules:
                     categories[result.category] = []
                 categories[result.category].append(result)
 
+            # Calculate category-specific scores
+            category_scores = {}
+            if database_name:
+                for category_name, results in categories.items():
+                    passed = sum(1 for r in results if r.passed)
+                    total = len(results)
+                    category_scores[category_name] = {
+                        "passed": passed,
+                        "failed": total - passed,
+                        "total": total,
+                        "percentage": int((passed / total * 100)) if total > 0 else 0,
+                    }
+
             # Prepare template context
             template_context = {
                 "timestamp": timestamp,
@@ -1187,6 +1200,28 @@ validation_rules:
                     "Memory Configuration",
                     "Feature Configuration",
                     "Database Objects",
+                    "Security & Auditing",
+                    "Backup & Recovery",
+                    "Performance & Tuning",
+                    "Storage & Disk Management",
+                    "High Availability & Cluster",
+                    "Licensing & Options",
+                    "Logging & Monitoring",
+                ],
+                "category_scores": category_scores,
+                "summary_categories": [
+                    cat for cat in [
+                        "Memory Configuration",
+                        "Feature Configuration",
+                        "Database Objects",
+                        "Security & Auditing",
+                        "Backup & Recovery",
+                        "Performance & Tuning",
+                        "Storage & Disk Management",
+                        "High Availability & Cluster",
+                        "Licensing & Options",
+                        "Logging & Monitoring",
+                    ] if cat in category_scores
                 ],
                 "password_validation_results": (
                     pwd_validation_results.get(database_name) if database_name else None
