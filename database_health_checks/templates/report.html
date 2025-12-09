@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oracle Health Check Report</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap">
     <style>
         * {
             margin: 0;
@@ -12,296 +13,474 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #333;
-            padding: 20px;
+            font-family: 'Roboto', sans-serif;
+            background-color: #fafafa;
+            color: #212121;
+            padding: 24px;
             min-height: 100vh;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
         }
 
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        /* Header / AppBar */
+        .app-bar {
+            background-color: #1976d2;
             color: white;
-            padding: 40px;
-            text-align: center;
+            padding: 24px 32px;
+            border-radius: 4px;
+            margin-bottom: 32px;
+            box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2),
+                        0px 4px 5px 0px rgba(0, 0, 0, 0.14),
+                        0px 1px 10px 0px rgba(0, 0, 0, 0.12);
         }
 
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            font-weight: 300;
-            letter-spacing: 1px;
+        .app-bar h1 {
+            font-size: 2rem;
+            font-weight: 400;
+            letter-spacing: 0.25px;
+            margin-bottom: 24px;
         }
 
-        .header-info {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-top: 30px;
-            padding-top: 30px;
-            border-top: 2px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .header-info-item {
-            text-align: center;
-        }
-
-        .header-info-label {
-            font-size: 0.9em;
-            opacity: 0.9;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 5px;
-        }
-
-        .header-info-value {
-            font-size: 1.3em;
-            font-weight: 600;
-        }
-
-        .content {
-            padding: 40px;
-        }
-
-        .summary-section {
-            margin-bottom: 40px;
-        }
-
-        .summary-grid {
+        .app-bar-info {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .app-bar-info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-bar-info-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            opacity: 0.7;
+            margin-bottom: 8px;
+        }
+
+        .app-bar-info-value {
+            font-size: 1.25rem;
+            font-weight: 500;
+        }
+
+        /* Cards */
+        .card {
+            background-color: white;
+            border-radius: 4px;
+            box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2),
+                        0px 1px 1px 0px rgba(0, 0, 0, 0.14),
+                        0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .card h2 {
+            font-size: 1.25rem;
+            font-weight: 500;
+            margin-bottom: 16px;
+            color: #212121;
+        }
+
+        /* Summary Grid */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 20px;
-            margin-top: 20px;
+            margin-bottom: 32px;
         }
 
         .summary-card {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            padding: 25px;
-            border-radius: 8px;
-            border-left: 5px solid #667eea;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            background-color: white;
+            border-radius: 4px;
+            padding: 20px;
+            box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2),
+                        0px 1px 1px 0px rgba(0, 0, 0, 0.14),
+                        0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+            border-left: 4px solid #1976d2;
+            transition: all 0.3s ease;
+        }
+
+        .summary-card:hover {
+            box-shadow: 0px 5px 5px -3px rgba(0, 0, 0, 0.2),
+                        0px 8px 10px 1px rgba(0, 0, 0, 0.14),
+                        0px 3px 14px 2px rgba(0, 0, 0, 0.12);
         }
 
         .summary-card.healthy {
-            border-left-color: #10b981;
-            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left-color: #388e3c;
+            background: linear-gradient(to right, rgba(56, 142, 60, 0.05), white);
         }
 
         .summary-card.degraded {
-            border-left-color: #f59e0b;
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left-color: #f57c00;
+            background: linear-gradient(to right, rgba(245, 124, 0, 0.05), white);
         }
 
         .summary-card.unhealthy {
-            border-left-color: #ef4444;
-            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-left-color: #d32f2f;
+            background: linear-gradient(to right, rgba(211, 47, 47, 0.05), white);
         }
 
-        .summary-card h3 {
-            font-size: 1.1em;
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        .summary-card .percentage {
-            font-size: 2.2em;
-            font-weight: 700;
-            margin: 10px 0;
-        }
-
-        .summary-card .passed {
-            color: #10b981;
-        }
-
-        .summary-card .failed {
-            color: #ef4444;
-        }
-
-        .summary-card .status {
-            font-weight: 600;
+        .summary-card-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #757575;
             text-transform: uppercase;
-            font-size: 0.9em;
-            margin-top: 10px;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.4px;
+            margin-bottom: 12px;
         }
 
-        .category-section {
-            margin-bottom: 35px;
+        .summary-card-value {
+            font-size: 2.25rem;
+            font-weight: 500;
+            margin: 12px 0;
+            color: #212121;
         }
 
-        .category-title {
-            font-size: 1.5em;
-            font-weight: 600;
-            color: #667eea;
-            padding: 15px 0;
-            border-bottom: 3px solid #667eea;
-            margin-bottom: 20px;
+        .summary-card-value.healthy {
+            color: #388e3c;
+        }
+
+        .summary-card-value.degraded {
+            color: #f57c00;
+        }
+
+        .summary-card-value.unhealthy {
+            color: #d32f2f;
+        }
+
+        .summary-card-subtext {
+            font-size: 0.875rem;
+            color: #666;
+            margin: 8px 0;
+        }
+
+        .summary-card-status {
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .summary-card-status.healthy {
+            color: #388e3c;
+        }
+
+        .summary-card-status.degraded {
+            color: #f57c00;
+        }
+
+        .summary-card-status.unhealthy {
+            color: #d32f2f;
+        }
+
+        /* Database Info Section */
+        .db-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 16px;
+        }
+
+        .db-info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .db-info-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            color: #757575;
+            margin-bottom: 4px;
+        }
+
+        .db-info-value {
+            font-size: 1rem;
+            color: #212121;
+            word-break: break-all;
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 4px;
+            box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2),
+                        0px 1px 1px 0px rgba(0, 0, 0, 0.14),
+                        0px 1px 3px 0px rgba(0, 0, 0, 0.12);
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            background: white;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            border-radius: 6px;
-            overflow: hidden;
+            background-color: white;
         }
 
         table thead {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background-color: #f5f5f5;
+            border-bottom: 1px solid #e0e0e0;
         }
 
         table th {
-            padding: 15px;
+            padding: 16px;
             text-align: left;
+            font-size: 0.875rem;
             font-weight: 600;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.4px;
             text-transform: uppercase;
-            font-size: 0.85em;
+            color: #757575;
         }
 
         table td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #e5e7eb;
+            padding: 16px;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 0.875rem;
+            color: #212121;
         }
 
         table tbody tr:hover {
-            background: #f9fafb;
+            background-color: #f5f5f5;
         }
 
         table tbody tr:last-child td {
             border-bottom: none;
         }
 
-        .status-pass {
-            background-color: #d1fae5;
-            color: #065f46;
-            font-weight: 600;
+        /* Status Chips */
+        .chip {
+            display: inline-flex;
+            align-items: center;
             padding: 6px 12px;
-            border-radius: 20px;
-            text-align: center;
-            display: inline-block;
-            font-size: 0.85em;
+            border-radius: 16px;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            white-space: nowrap;
         }
 
-        .status-fail {
-            background-color: #fee2e2;
-            color: #991b1b;
-            font-weight: 600;
-            padding: 6px 12px;
-            border-radius: 20px;
-            text-align: center;
-            display: inline-block;
-            font-size: 0.85em;
+        .chip-success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
         }
 
-        .override-badge {
-            background-color: #dbeafe;
-            color: #1e40af;
-            padding: 3px 8px;
+        .chip-error {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        .chip-warning {
+            background-color: #fff3e0;
+            color: #e65100;
+        }
+
+        .chip-info {
+            background-color: #e3f2fd;
+            color: #1565c0;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            margin-left: 8px;
+            background-color: #e3f2fd;
+            color: #1565c0;
+        }
+
+        /* Section Headers */
+        .section-header {
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: #212121;
+            padding: 24px 24px 16px 24px;
+            border-bottom: 1px solid #e0e0e0;
+            background-color: #fafafa;
+            border-radius: 4px 4px 0 0;
+        }
+
+        /* Stats Box */
+        .stats-box {
+            background-color: #f5f5f5;
+            padding: 16px;
             border-radius: 4px;
-            font-size: 0.75em;
-            margin-left: 5px;
-            font-weight: 600;
+            margin-top: 16px;
+            font-size: 0.875rem;
+            color: #666;
         }
 
+        .stats-box strong {
+            color: #212121;
+        }
+
+        /* Footer */
+        .footer {
+            background-color: white;
+            padding: 24px;
+            text-align: center;
+            color: #999;
+            font-size: 0.875rem;
+            border-radius: 4px;
+            margin-top: 32px;
+            box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2),
+                        0px 1px 1px 0px rgba(0, 0, 0, 0.14),
+                        0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+        }
+
+        /* Utility Classes */
         .na-value {
             color: #999;
             font-style: italic;
         }
 
-        .footer {
-            background: #f3f4f6;
-            padding: 20px 40px;
-            text-align: center;
-            color: #666;
-            font-size: 0.9em;
-            border-top: 1px solid #e5e7eb;
+        .page-title {
+            font-size: 2rem;
+            font-weight: 400;
+            margin-bottom: 32px;
+            color: #212121;
+            letter-spacing: 0.25px;
         }
 
-        @media (max-width: 768px) {
-            .header {
-                padding: 20px;
+        /* Responsive */
+        @media (max-width: 960px) {
+            .summary-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             }
 
-            .header h1 {
-                font-size: 1.8em;
+            .app-bar-info {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 16px;
             }
 
-            .header-info {
+            .db-info-grid {
                 grid-template-columns: 1fr;
-                gap: 10px;
-            }
-
-            .content {
-                padding: 20px;
             }
 
             table {
-                font-size: 0.9em;
+                font-size: 0.8125rem;
             }
 
-            table th, table td {
-                padding: 10px;
+            table th,
+            table td {
+                padding: 12px 8px;
+            }
+
+            .app-bar {
+                padding: 16px 24px;
+            }
+
+            .card {
+                padding: 16px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 12px;
+            }
+
+            .app-bar {
+                padding: 12px 16px;
+                margin-bottom: 16px;
+            }
+
+            .app-bar h1 {
+                font-size: 1.5rem;
+                margin-bottom: 16px;
+            }
+
+            .app-bar-info {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .card {
+                padding: 12px;
+                margin-bottom: 16px;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
+        <!-- App Bar / Header -->
+        <div class="app-bar">
             <h1>Oracle Database Health Check Report</h1>
-            <div class="header-info">
-                <div class="header-info-item">
-                    <div class="header-info-label">Generated</div>
-                    <div class="header-info-value">{{ timestamp }}</div>
+            <div class="app-bar-info">
+                <div class="app-bar-info-item">
+                    <div class="app-bar-info-label">Generated</div>
+                    <div class="app-bar-info-value">{{ timestamp }}</div>
                 </div>
-                <div class="header-info-item">
-                    <div class="header-info-label">Host(s)</div>
-                    <div class="header-info-value">{{ hostname }}</div>
+                <div class="app-bar-info-item">
+                    <div class="app-bar-info-label">Hostname(s)</div>
+                    <div class="app-bar-info-value">{{ hostname }}</div>
                 </div>
-                <div class="header-info-item">
-                    <div class="header-info-label">Total Checks</div>
-                    <div class="header-info-value">{{ results_count }}</div>
+                <div class="app-bar-info-item">
+                    <div class="app-bar-info-label">Total Checks</div>
+                    <div class="app-bar-info-value">{{ results_count }}</div>
                 </div>
             </div>
         </div>
 
-        <div class="content">
-            <!-- Database Information Section -->
-            <div class="database-info-section" style="margin-bottom: 30px; padding: 20px; background: #f9fafb; border-radius: 6px;">
-                <h2 style="font-size: 1.3em; color: #333; margin-bottom: 15px;">Database Information</h2>
-                {% if single_database %}
-                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
-                    <div>
-                        <p style="margin: 8px 0;"><strong>Database Name:</strong> {{ database_name }}</p>
-                        <p style="margin: 8px 0;"><strong>Hostname:</strong> {{ db_info.hostname }}</p>
-                        <p style="margin: 8px 0;"><strong>Port:</strong> {{ db_info.port }}</p>
-                    </div>
-                    <div>
-                        <p style="margin: 8px 0;"><strong>Service Name:</strong> {{ db_info.service_name }}</p>
-                        <p style="margin: 8px 0;"><strong>Oracle Version:</strong> {{ db_info.oracle_version }}</p>
-                        <p style="margin: 8px 0;"><strong>Overall Score:</strong> <span style="font-size: 1.3em; font-weight: bold; color: {{ score_color }};">{{ overall_score }}%</span></p>
-                    </div>
+        <!-- Database Information Card -->
+        <div class="card">
+            <h2>Database Information</h2>
+            {% if single_database %}
+            <div class="db-info-grid">
+                <div class="db-info-item">
+                    <div class="db-info-label">Database Name</div>
+                    <div class="db-info-value">{{ database_name }}</div>
                 </div>
-                {% else %}
-                <p style="color: #666;">Multiple databases in this report</p>
-                {% endif %}
+                <div class="db-info-item">
+                    <div class="db-info-label">Hostname</div>
+                    <div class="db-info-value">{{ db_info.hostname }}</div>
+                </div>
+                <div class="db-info-item">
+                    <div class="db-info-label">Port</div>
+                    <div class="db-info-value">{{ db_info.port }}</div>
+                </div>
+                <div class="db-info-item">
+                    <div class="db-info-label">Service Name</div>
+                    <div class="db-info-value">{{ db_info.service_name }}</div>
+                </div>
+                <div class="db-info-item">
+                    <div class="db-info-label">Oracle Version</div>
+                    <div class="db-info-value">{{ db_info.oracle_version }}</div>
+                </div>
+                <div class="db-info-item">
+                    <div class="db-info-label">Overall Health Score</div>
+                    <div class="db-info-value" style="font-size: 1.75rem; color: {{ score_color }}; font-weight: 600;">{{ overall_score }}%</div>
+                </div>
             </div>
+            {% else %}
+            <p style="color: #999;">Multiple databases in this report</p>
+            {% endif %}
+        </div>
 
-            <!-- Summary Section -->
-            <div class="summary-section">
-                <h2 style="font-size: 1.5em; color: #333; margin-bottom: 20px;">Summary</h2>
+        <!-- Summary Section -->
+        <div>
+            <div class="section-header">Health Summary</div>
+            <div class="card" style="margin-top: 0; border-radius: 0 0 4px 4px;">
                 <div class="summary-grid">
                 {% for db_name, counts in summary.items() | sort %}
                     {% set passed_pct = ((counts.passed / counts.total * 100) | int) if counts.total > 0 else 0 %}
@@ -316,22 +495,24 @@
                         {% set status_text = "UNHEALTHY" %}
                     {% endif %}
                     <div class="summary-card {{ status_class }}">
-                        <h3>{{ db_name }}</h3>
-                        <div class="percentage"><span class="passed">{{ passed_pct }}%</span></div>
-                        <div style="font-size: 0.95em; color: #666;">
-                            <span class="passed">{{ counts.passed }}</span> passed /
-                            <span class="failed">{{ counts.failed }}</span> failed
+                        <div class="summary-card-title">{{ db_name }}</div>
+                        <div class="summary-card-value {{ status_class }}">{{ passed_pct }}%</div>
+                        <div class="summary-card-subtext">
+                            <span style="color: #388e3c;">{{ counts.passed }} passed</span> /
+                            <span style="color: #d32f2f;">{{ counts.failed }} failed</span>
                         </div>
-                        <div class="status">{{ status_text }}</div>
+                        <div class="summary-card-status {{ status_class }}">{{ status_text }}</div>
                     </div>
                 {% endfor %}
                 </div>
             </div>
+        </div>
 
-            <!-- Password Validation Section -->
-            {% if password_validation_results %}
-            <div class="category-section">
-                <div class="category-title">Password Validation Functions</div>
+        <!-- Password Validation Section -->
+        {% if password_validation_results %}
+        <div class="card">
+            <div class="section-header" style="margin: -24px -24px 16px -24px; border-radius: 4px 4px 0 0;">Password Validation Functions</div>
+            <div class="table-container">
                 <table>
                     <thead>
                         <tr>
@@ -347,21 +528,23 @@
                             <td>{{ profile.profile }}</td>
                             <td>{{ profile.required_function }}</td>
                             <td>{{ profile.actual_function }}</td>
-                            <td>{% if profile.passed %}<span class="status-pass">✓ PASS</span>{% else %}<span class="status-fail">✗ FAIL</span>{% endif %}</td>
+                            <td>{% if profile.passed %}<span class="chip chip-success">✓ Pass</span>{% else %}<span class="chip chip-error">✗ Fail</span>{% endif %}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
-                <div style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 4px; font-size: 0.9em;">
-                    <strong>Result:</strong> {{ password_validation_results.passed_count }}/{{ password_validation_results.total_count }} profiles passed
-                </div>
             </div>
-            {% endif %}
+            <div class="stats-box">
+                <strong>Result:</strong> {{ password_validation_results.passed_count }}/{{ password_validation_results.total_count }} profiles passed
+            </div>
+        </div>
+        {% endif %}
 
-            <!-- Scheduler Jobs Section -->
-            {% if scheduler_jobs %}
-            <div class="category-section">
-                <div class="category-title">Scheduler Jobs</div>
+        <!-- Scheduler Jobs Section -->
+        {% if scheduler_jobs %}
+        <div class="card">
+            <div class="section-header" style="margin: -24px -24px 16px -24px; border-radius: 4px 4px 0 0;">Scheduler Jobs</div>
+            <div class="table-container">
                 <table>
                     <thead>
                         <tr>
@@ -379,24 +562,26 @@
                             <td><strong>{{ job.name }}</strong></td>
                             <td>{{ job.type }}</td>
                             <td>{{ job.class }}</td>
-                            <td>{% if job.enabled == "YES" %}<span class="status-pass">{{ job.enabled }}</span>{% else %}<span class="status-fail">{{ job.enabled }}</span>{% endif %}</td>
+                            <td>{% if job.enabled == "YES" %}<span class="chip chip-success">{{ job.enabled }}</span>{% else %}<span class="chip chip-error">{{ job.enabled }}</span>{% endif %}</td>
                             <td>{{ job.state }}</td>
                             <td style="font-size: 0.85em;">{{ job.schedule }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
-                <div style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 4px; font-size: 0.9em;">
-                    <strong>Total Jobs:</strong> {{ scheduler_jobs.jobs | length }} | <strong>Log Retention:</strong> {{ scheduler_jobs.global_retention }} days
-                </div>
             </div>
-            {% endif %}
+            <div class="stats-box">
+                <strong>Total Jobs:</strong> {{ scheduler_jobs.jobs | length }} | <strong>Log Retention:</strong> {{ scheduler_jobs.global_retention }} days
+            </div>
+        </div>
+        {% endif %}
 
-            <!-- Health Check Results by Category -->
-            {% for category_name in category_order %}
-                {% if category_name in categories %}
-                <div class="category-section">
-                    <div class="category-title">{{ category_name }}</div>
+        <!-- Health Check Results by Category -->
+        {% for category_name in category_order %}
+            {% if category_name in categories %}
+            <div class="card">
+                <div class="section-header" style="margin: -24px -24px 16px -24px; border-radius: 4px 4px 0 0;">{{ category_name }}</div>
+                <div class="table-container">
                     <table>
                         <thead>
                             <tr>
@@ -412,20 +597,21 @@
                             <tr>
                                 <td>{{ result.database }}</td>
                                 <td>{{ result.check_name }}</td>
-                                <td>{% if result.passed %}<span class="status-pass">✓ PASS</span>{% else %}<span class="status-fail">✗ FAIL</span>{% endif %}</td>
+                                <td>{% if result.passed %}<span class="chip chip-success">✓ Pass</span>{% else %}<span class="chip chip-error">✗ Fail</span>{% endif %}</td>
                                 <td>{% if result.actual_value %}<span>{{ result.actual_value }}</span>{% else %}<span class="na-value">N/A</span>{% endif %}</td>
-                                <td>{% if result.expected_value %}<span>{{ result.expected_value }}</span>{% else %}<span class="na-value">N/A</span>{% endif %}{% if result.is_override %}<span class="override-badge">OVERRIDE</span>{% endif %}</td>
+                                <td>{% if result.expected_value %}<span>{{ result.expected_value }}</span>{% else %}<span class="na-value">N/A</span>{% endif %}{% if result.is_override %}<span class="badge">Override</span>{% endif %}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
-                {% endif %}
-            {% endfor %}
-        </div>
+            </div>
+            {% endif %}
+        {% endfor %}
 
+        <!-- Footer -->
         <div class="footer">
-            <p>Oracle Health Check Report | Generated with OracleHealthCheck</p>
+            <p>Oracle Health Check Report | Generated with OracleHealthCheck | Material Design Inspired</p>
         </div>
     </div>
 </body>

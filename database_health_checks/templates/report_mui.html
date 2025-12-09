@@ -452,8 +452,14 @@
                     <div class="db-info-value">{{ database_name }}</div>
                 </div>
                 <div class="db-info-item">
-                    <div class="db-info-label">Hostname</div>
-                    <div class="db-info-value">{{ db_info.hostname }}</div>
+                    <div class="db-info-label">Hostname(s)</div>
+                    <div class="db-info-value">
+                        {% if db_info.hostnames %}
+                            {{ db_info.hostnames | join(", ") }}
+                        {% else %}
+                            {{ db_info.hostname }}
+                        {% endif %}
+                    </div>
                 </div>
                 <div class="db-info-item">
                     <div class="db-info-label">Port</div>
@@ -467,6 +473,12 @@
                     <div class="db-info-label">Oracle Version</div>
                     <div class="db-info-value">{{ db_info.oracle_version }}</div>
                 </div>
+                {% if db_info.instance_names %}
+                <div class="db-info-item">
+                    <div class="db-info-label">Instance Name(s)</div>
+                    <div class="db-info-value">{{ db_info.instance_names | join(", ") }}</div>
+                </div>
+                {% endif %}
                 <div class="db-info-item">
                     <div class="db-info-label">Overall Health Score</div>
                     <div class="db-info-value" style="font-size: 1.75rem; color: {{ score_color }}; font-weight: 600;">{{ overall_score }}%</div>
@@ -540,42 +552,6 @@
         </div>
         {% endif %}
 
-        <!-- Scheduler Jobs Section -->
-        {% if scheduler_jobs %}
-        <div class="card">
-            <div class="section-header" style="margin: -24px -24px 16px -24px; border-radius: 4px 4px 0 0;">Scheduler Jobs</div>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Job Name</th>
-                            <th>Type</th>
-                            <th>Class</th>
-                            <th>Enabled</th>
-                            <th>State</th>
-                            <th>Schedule</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for job in scheduler_jobs.jobs %}
-                        <tr>
-                            <td><strong>{{ job.name }}</strong></td>
-                            <td>{{ job.type }}</td>
-                            <td>{{ job.class }}</td>
-                            <td>{% if job.enabled == "YES" %}<span class="chip chip-success">{{ job.enabled }}</span>{% else %}<span class="chip chip-error">{{ job.enabled }}</span>{% endif %}</td>
-                            <td>{{ job.state }}</td>
-                            <td style="font-size: 0.85em;">{{ job.schedule }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <div class="stats-box">
-                <strong>Total Jobs:</strong> {{ scheduler_jobs.jobs | length }} | <strong>Log Retention:</strong> {{ scheduler_jobs.global_retention }} days
-            </div>
-        </div>
-        {% endif %}
-
         <!-- Health Check Results by Category -->
         {% for category_name in category_order %}
             {% if category_name in categories %}
@@ -607,12 +583,48 @@
                 </div>
             </div>
             {% endif %}
-        {% endfor %}
+            {% endfor %}
 
-        <!-- Footer -->
-        <div class="footer">
+            <!-- Scheduler Jobs Section -->
+            {% if scheduler_jobs %}
+            <div class="card">
+            <div class="section-header" style="margin: -24px -24px 16px -24px; border-radius: 4px 4px 0 0;">Scheduler Jobs</div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Job Name</th>
+                            <th>Type</th>
+                            <th>Class</th>
+                            <th>Enabled</th>
+                            <th>State</th>
+                            <th>Schedule</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in scheduler_jobs.jobs %}
+                        <tr>
+                            <td><strong>{{ job.name }}</strong></td>
+                            <td>{{ job.type }}</td>
+                            <td>{{ job.class }}</td>
+                            <td>{% if job.enabled == "YES" %}<span class="chip chip-success">{{ job.enabled }}</span>{% else %}<span class="chip chip-error">{{ job.enabled }}</span>{% endif %}</td>
+                            <td>{{ job.state }}</td>
+                            <td style="font-size: 0.85em;">{{ job.schedule }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="stats-box">
+                <strong>Total Jobs:</strong> {{ scheduler_jobs.jobs | length }} | <strong>Log Retention:</strong> {{ scheduler_jobs.global_retention }} days
+            </div>
+            </div>
+            {% endif %}
+
+            <!-- Footer -->
+            <div class="footer">
             <p>Oracle Health Check Report | Generated with OracleHealthCheck | Material Design Inspired</p>
-        </div>
+            </div>
     </div>
 </body>
 </html>

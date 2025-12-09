@@ -21,17 +21,30 @@ validation_rules:
     pga_aggregate_target_required: true               # PGA_AGGREGATE_TARGET must be set
     pga_aggregate_limit_required: true                # PGA_AGGREGATE_LIMIT must be set
     memory_target_required: false                     # MEMORY_TARGET - optional in modern Oracle
+    optimizer_mode: all_rows                          # OPTIMIZER_MODE should be set to all_rows
+    processes_min: 1000                               # PROCESSES should be at least 1000
+    db_files_min: 2500                                # DB_FILES should be at least 2500
+    statistics_level: TYPICAL                         # STATISTICS_LEVEL should be set to TYPICAL
+    sessions_min: 1000                                # SESSIONS should be at least 1000
+    open_cursors_min: 1000                            # OPEN_CURSORS should be at least 1000
 
     # Feature Configuration Checks
+    archivelog_mode_enabled: True                     # Archivelog mode should be enabled
     flashback_enabled: True                           # Flashback database should be enabled
+    force_logging_enabled: True                       # Force logging should be enabled
+    management_pack: True                             # Management and tuning packs should be enabled
     unified_auditing_enabled: True                    # Unified Auditing should be enabled
 
     # Database Objects Checks
-    open_dblinks_max: 100                             # Maximum number of open database links
-    jobs_enabled_min: 1                               # Minimum number of scheduler jobs
+    open_dblinks_max: 32                              # Minimum number of open database links
     job_queue_processes_min: 50                       # Minimum JOB_QUEUE_PROCESSES setting
+    scheduler_jobs_status: true                       # Report on scheduler jobs status (alerts on disabled purge/cleanup jobs)
     scheduler_log_retention_days: 30                  # Minimum scheduler log retention
     job_class_log_retention_days: 1                   # Minimum job class log retention
+    control_file_multiplexing: true                   # Control files should be multiplexed
+    datafiles_asm: true                               # Datafiles should be in +DATA ASM disk group
+    recovery_logs_asm: true                           # Recovery logs should be in +RECO ASM disk group
+    redo_log_size: true                               # Online redo logs should be at least 1GB
 
   # Database-specific overrides (key = database name from health_check.yaml)
   overrides:
@@ -47,10 +60,22 @@ validation_rules:
             - "ORA_STIG_PROFILE"
       sga_target_min_gb: 1                            # FREE tier has limited memory
       memory_target_required: false                   # Not needed for FREE
+      optimizer_mode: all_rows                        # OPTIMIZER_MODE should still be all_rows
+      processes_min: 150                              # FREE tier has lower process limit
+      db_files_min: 200                               # FREE tier has lower file limit
+      sessions_min: 250                               # FREE tier has lower session limit
+      open_cursors_min: 300                           # FREE tier has lower cursor limit
+      archivelog_mode_enabled: false                  # Not available in FREE tier
       flashback_enabled: false                        # Not available in FREE tier
+      force_logging_enabled: false                    # Not available in FREE tier
+      management_pack: false                          # Not required for FREE tier
       unified_auditing_enabled: false                 # Not required for FREE
       job_queue_processes_min: 4                      # Lower threshold for FREE
-      jobs_enabled_min: 0                             # Not critical for FREE
+      scheduler_jobs_status: true                     # Still report on jobs for FREE
       scheduler_log_retention_days: 7                 # Relaxed for FREE
       job_class_log_retention_days: 0                 # Optional for FREE
       open_dblinks_max: 4
+      control_file_multiplexing: false                # Not critical for FREE tier
+      datafiles_asm: false                            # Not applicable for FREE tier (non-ASM)
+      recovery_logs_asm: false                        # Not applicable for FREE tier (non-ASM)
+      redo_log_size: false                            # Not critical for FREE tier

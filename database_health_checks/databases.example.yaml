@@ -1,0 +1,20 @@
+# Database Connection Information
+# Stores connection details for Oracle databases to be health checked
+
+databases:
+  # Example database configuration
+  # PROD:
+  #   hostname: db-prod.example.com
+  #   port: 1521
+  #   service_name: PRODDB
+  #   username: health_check_user
+  #   password: ${ORACLE_PROD_PASSWORD}  # Use environment variables for sensitive data
+  #   auth_mode: default                 # optional: default, SYSDBA, SYSOPER
+  
+  # FREE:
+  #   hostname: localhost
+  #   port: 1521
+  #   service_name: FREE
+  #   username: system
+  #   password: ${ORACLE_FREE_PASSWORD}
+  #   auth_mode: default

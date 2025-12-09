@@ -15,6 +15,9 @@ from jinja2 import Environment, FileSystemLoader
 from loguru import logger
 from tabulate import tabulate
 
+# Connection pool configuration
+oracledb.defaults.config_dir = None
+
 # Add tools directory to path for importing libs
 _script_dir = os.path.dirname(os.path.abspath(__file__))
 _tools_dir = os.path.dirname(_script_dir)
@@ -22,9 +25,10 @@ if _tools_dir not in sys.path:
     sys.path.insert(0, _tools_dir)
 
 from database_health_checks.check_registry import check_reg  # noqa: E402
+from database_health_checks.inventory import Inventory  # noqa: E402
 from database_health_checks.models.check_result import CheckResult  # noqa: E402
 from database_health_checks.validation_manager import ValidationManager  # noqa: E402
-from libs.inventory import Inventory  # noqa: E402
+
 
 # -----------------------------------------------------------------------
 # Colors
@@ -66,6 +70,7 @@ class OracleHealthCheck:
         self.inventory: Optional[Inventory] = None
         self.validation_manager: Optional[ValidationManager] = None
         self.results: List[CheckResult] = []
+        self.connection_pools: Dict[str, oracledb.ConnectionPool] = {}
 
         # Setup logging
         logger.remove()
@@ -82,7 +87,7 @@ class OracleHealthCheck:
             self.inventory = Inventory()
             if self.debug:
                 logger.debug(
-                    f"[INIT] Database inventory loaded from default libs/inventory/inventory.yaml, databases count: {len(self.inventory.get_all_databases())}"
+                    f"[INIT] Database inventory loaded from databases.example.yaml, databases count: {len(self.inventory.get_all_databases())}"
                 )
         except Exception as e:
             logger.error(f"[INIT] Failed to load inventory: {e}")
@@ -93,6 +98,10 @@ class OracleHealthCheck:
         )
         if self.validation_manager and self.debug:
             logger.debug("[INIT] Validation rules loaded")
+
+    def __del__(self) -> None:
+        """Clean up connection pools when the object is destroyed."""
+        self.close_all_pools()
 
     # Configuration Loading
     # =====================================================================
@@ -126,7 +135,7 @@ validation_rules:
     unified_auditing_enabled: True                    # Unified Auditing should be enabled
 
     # Database Objects Checks
-    open_dblinks_max: 100                             # Maximum number of open database links
+    open_dblinks_max: 32                              # Minimum number of open database links
     jobs_enabled_min: 1                               # Minimum number of scheduler jobs
     job_queue_processes_min: 50                       # Minimum JOB_QUEUE_PROCESSES setting
     scheduler_log_retention_days: 30                  # Minimum scheduler log retention
@@ -198,38 +207,94 @@ validation_rules:
 
     # Connection Management
     # =====================================================================
-    def _get_connection(self, db) -> oracledb.Connection:
-        """Create a connection to an Oracle database.
+    def _create_connection_pool(self, db) -> oracledb.ConnectionPool:
+        """Create a connection pool for a database.
 
         Args:
             db: An OracleDatabase instance from the inventory.
 
         Returns:
-            oracledb.Connection: A connected database connection.
+            oracledb.ConnectionPool: A connection pool instance.
         """
+        pool_key = db.name
+
+        if pool_key in self.connection_pools:
+            return self.connection_pools[pool_key]
+
         try:
             if self.debug:
                 logger.debug(
-                    f"[CONNECT] Connecting to {db.name} ({db.hostname}:{db.port}/{db.service_name})"
+                    f"[POOL] Creating connection pool for {db.name} ({db.hostname}:{db.port}/{db.service_name})"
                 )
 
             # Determine auth mode
             auth_mode = db.get_auth_mode() or oracledb.AUTH_MODE_DEFAULT
 
-            conn = oracledb.connect(
+            pool = oracledb.create_pool(
                 user=db.username,
                 password=db.password.get_secret_value(),
                 dsn=db.dsn(),
                 mode=auth_mode,
+                min=2,
+                max=10,
+                increment=1,
             )
 
-            if self.debug:
-                logger.debug(f"[CONNECT] Successfully connected to {db.name}")
+            self.connection_pools[pool_key] = pool
 
+            if self.debug:
+                logger.debug(f"[POOL] Connection pool created for {db.name}")
+
+            return pool
+        except Exception as e:
+            logger.error(f"[POOL] Failed to create connection pool for {db.name}: {e}")
+            raise
+
+    def _get_connection(self, db) -> oracledb.Connection:
+        """Get a connection from the pool.
+
+        Args:
+            db: An OracleDatabase instance from the inventory.
+
+        Returns:
+            oracledb.Connection: A database connection from the pool.
+        """
+        try:
+            pool = self._create_connection_pool(db)
+            conn = pool.acquire()
+
+            # if self.debug:
+            #     logger.debug(f"[CONNECT] Acquired connection from pool for {db.name}")
+            #
             return conn
         except Exception as e:
-            logger.error(f"[CONNECT] Failed to connect to {db.name}: {e}")
+            logger.error(f"[CONNECT] Failed to get connection for {db.name}: {e}")
             raise
+
+    def _release_connection(self, conn: oracledb.Connection, db_name: str) -> None:
+        """Release a connection back to the pool.
+
+        Args:
+            conn: The database connection to release.
+            db_name: Name of the database for logging.
+        """
+        try:
+            if conn:
+                conn.close()
+                # if self.debug:
+                #     logger.debug(f"[CONNECT] Released connection back to pool for {db_name}")
+        except Exception as e:
+            logger.warning(f"[CONNECT] Error releasing connection for {db_name}: {e}")
+
+    def close_all_pools(self) -> None:
+        """Close all connection pools."""
+        for pool_key, pool in self.connection_pools.items():
+            try:
+                pool.close()
+                if self.debug:
+                    logger.debug(f"[POOL] Closed connection pool for {pool_key}")
+            except Exception as e:
+                logger.warning(f"[POOL] Error closing pool for {pool_key}: {e}")
 
     # Health Check Methods
     # =====================================================================
@@ -265,6 +330,7 @@ validation_rules:
         for db_name in db_names:
             db = self.inventory.get_database(db_name)
             if db:
+                conn = None
                 try:
                     conn = self._get_connection(db)
 
@@ -274,10 +340,12 @@ validation_rules:
                     # Execute all checks
                     self._execute_checks(conn, db)
 
-                    conn.close()
-
                 except Exception as e:
                     logger.error(f"[CHECK] Error running checks for {db.name}: {e}")
+                finally:
+                    # Release connection back to pool
+                    if conn:
+                        self._release_connection(conn, db.name)
 
         return self.results
 
@@ -351,6 +419,90 @@ validation_rules:
 
         except Exception as e:
             logger.warning(f"[CHECK] Error running checks for {db.name}: {e}")
+
+    def _fetch_hostnames_from_db(self, db) -> List[str]:
+        """Fetch hostnames from gv$instance table.
+
+        For RAC databases, returns all hostnames in the cluster.
+        For single instance, returns the single hostname.
+
+        Args:
+            db: An OracleDatabase instance from the inventory.
+
+        Returns:
+            List[str]: List of hostnames, empty list if query fails.
+        """
+        hostnames = []
+        conn = None
+        try:
+            conn = self._get_connection(db)
+            cur = conn.cursor()
+            
+            # Try gv$instance first (works for RAC and single instance)
+            try:
+                cur.execute("SELECT DISTINCT host_name FROM gv$instance ORDER BY host_name")
+                rows = cur.fetchall()
+                if rows:
+                    hostnames = [str(row[0]) for row in rows]
+            except Exception:
+                # Fall back to v$instance for single instance
+                cur.execute("SELECT host_name FROM v$instance")
+                row = cur.fetchone()
+                if row:
+                    hostnames = [str(row[0])]
+            
+            cur.close()
+        except Exception as e:
+            if self.debug:
+                logger.debug(f"[HOSTNAME] Could not retrieve hostnames for {db.name}: {e}")
+        finally:
+            # Release connection back to pool
+            if conn:
+                self._release_connection(conn, db.name)
+        
+        return hostnames
+
+    def _fetch_instance_names(self, db) -> List[str]:
+        """Fetch instance names from gv$instance table.
+
+        For RAC databases, returns all instance names in the cluster.
+        For single instance, returns the single instance name.
+
+        Args:
+            db: An OracleDatabase instance from the inventory.
+
+        Returns:
+            List[str]: List of instance names, empty list if query fails.
+        """
+        instance_names = []
+        conn = None
+        try:
+            conn = self._get_connection(db)
+            cur = conn.cursor()
+            
+            # Try gv$instance first (works for RAC and single instance)
+            try:
+                cur.execute("SELECT DISTINCT instance_name FROM gv$instance ORDER BY instance_name")
+                rows = cur.fetchall()
+                if rows:
+                    instance_names = [str(row[0]) for row in rows]
+            except Exception:
+                # Fall back to v$instance for single instance
+                cur.execute("SELECT instance_name FROM v$instance")
+                row = cur.fetchone()
+                if row:
+                    instance_names = [str(row[0])]
+            
+            cur.close()
+        except Exception as e:
+            if self.debug:
+                logger.debug(f"[INSTANCE] Could not retrieve instance names for {db.name}: {e}")
+        finally:
+            # Release connection back to pool
+            if conn:
+                self._release_connection(conn, db.name)
+        
+        return instance_names
 
     def _get_value_transformer(self, rule_name: str) -> Optional[Any]:
         """Get optional value transformer function for a rule.
@@ -678,6 +830,7 @@ validation_rules:
         if not db:
             return result
         
+        conn = None
         try:
             conn = self._get_connection(db)
             cur = conn.cursor()
@@ -724,12 +877,14 @@ validation_rules:
                     "is_purge": is_purge
                 })
             
-            conn.close()
-            
         except Exception as e:
             result["error"] = str(e)
             if self.debug:
                 logger.debug(f"Error getting scheduler jobs for {db_name}: {e}")
+        finally:
+            # Release connection back to pool
+            if conn:
+                self._release_connection(conn, db_name)
         
         return result
     
@@ -817,6 +972,7 @@ validation_rules:
             
             # Get summary and database info
             summary = {}
+            hostname = "N/A"  # Default hostname
             for result in results_to_report:
                 db_name = result.database
                 if db_name not in summary:
@@ -830,56 +986,116 @@ validation_rules:
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             # Get database hosts and connection info
-            db_hosts = []
             db_info = {}
             if self.inventory:
                 for db_name in self.inventory.get_database_names():
                     db = self.inventory.get_database(db_name)
                     if db:
-                        if hasattr(db, "hostname"):
-                            db_hosts.append(db.hostname)
                         # Store detailed info for each database
                         db_info[db_name] = {
                             "hostname": getattr(db, "hostname", "N/A"),
+                            "hostnames": [],  # Will be populated from gv$instance
                             "port": getattr(db, "port", "N/A"),
                             "service_name": getattr(db, "service_name", "N/A"),
-                            "oracle_version": "N/A"  # Will be populated from results
+                            "oracle_version": "N/A",  # Will be populated from results
+                            "instance_names": []  # Will be populated from gv$instance
                         }
             
-            hostname = ", ".join(db_hosts) if db_hosts else "N/A"
-            
-            # Try to get oracle version from results or connection
+            # Try to get oracle version and instance names from results or connection
             for result in results_to_report:
                 db_name = result.database
                 if db_name in db_info and result.actual_value and "oracle" in str(result.check_name).lower():
                     # Some checks might contain version info
                     pass
                 elif db_name in db_info:
-                    # Try to query oracle version from connection if available
+                    # Try to query oracle version and instance names from connection if available
+                    conn = None
                     try:
                         if self.inventory:
                             db = self.inventory.get_database(db_name)
                             if db:
                                 conn = self._get_connection(db)
                                 cur = conn.cursor()
-                                cur.execute("SELECT banner FROM v$version WHERE ROWNUM = 1")
-                                version_row = cur.fetchone()
-                                if version_row:
-                                    db_info[db_name]["oracle_version"] = version_row[0]
+                                
+                                # Get oracle version
+                                try:
+                                    cur.execute("SELECT banner FROM v$version WHERE ROWNUM = 1")
+                                    version_row = cur.fetchone()
+                                    if version_row:
+                                        db_info[db_name]["oracle_version"] = version_row[0]
+                                except Exception as e:
+                                    if self.debug:
+                                        logger.debug(f"Could not retrieve Oracle version for {db_name}: {e}")
+                                
+                                # Get hostnames from gv$instance
+                                try:
+                                    cur.execute("SELECT DISTINCT host_name FROM gv$instance ORDER BY host_name")
+                                    rows = cur.fetchall()
+                                    if rows:
+                                        db_info[db_name]["hostnames"] = [str(row[0]) for row in rows]
+                                    else:
+                                        # Fall back to v$instance for single instance
+                                        cur.execute("SELECT host_name FROM v$instance")
+                                        row = cur.fetchone()
+                                        if row:
+                                            db_info[db_name]["hostnames"] = [str(row[0])]
+                                except Exception as e:
+                                    if self.debug:
+                                        logger.debug(f"Could not retrieve hostnames for {db_name}: {e}")
+                                
+                                # Get instance names
+                                try:
+                                    cur.execute("SELECT DISTINCT instance_name FROM gv$instance ORDER BY instance_name")
+                                    rows = cur.fetchall()
+                                    if rows:
+                                        db_info[db_name]["instance_names"] = [str(row[0]) for row in rows]
+                                    else:
+                                        # Fall back to v$instance for single instance
+                                        cur.execute("SELECT instance_name FROM v$instance")
+                                        row = cur.fetchone()
+                                        if row:
+                                            db_info[db_name]["instance_names"] = [str(row[0])]
+                                except Exception as e:
+                                    if self.debug:
+                                        logger.debug(f"Could not retrieve instance names for {db_name}: {e}")
+                                
                                 cur.close()
-                                conn.close()
                     except Exception as e:
                         if self.debug:
-                            logger.debug(f"Could not retrieve Oracle version for {db_name}: {e}")
+                            logger.debug(f"Could not establish connection for {db_name}: {e}")
+                    finally:
+                        # Release connection back to pool
+                        if conn:
+                            self._release_connection(conn, db_name)
+            
+            # Update hostname from db_info if available
+            if database_name and database_name in db_info and db_info[database_name].get("hostnames"):
+                hostname = db_info[database_name]["hostnames"][0]
             
             # Get password validation and scheduler job info for the databases
             pwd_validation_results = {}
-            scheduler_jobs = {}
+            scheduler_jobs_data = None
             if database_name:
                 # Get password validation results for specific database
-                pwd_validation_results = self.get_profile_validation_results([database_name])
+                try:
+                    pwd_validation_results = self.get_profile_validation_results([database_name])
+                    if self.debug:
+                        logger.debug(f"[REPORT] Password validation results for {database_name}: {pwd_validation_results.keys()}")
+                except Exception as e:
+                    logger.warning(f"[REPORT] Error getting password validation results: {e}")
+                
                 # Get scheduler job info
-                scheduler_jobs[database_name] = self._fetch_scheduler_jobs(database_name)
+                try:
+                    scheduler_jobs_result = self._fetch_scheduler_jobs(database_name)
+                    # Only include if no error (error key will be None if successful)
+                    if not scheduler_jobs_result.get("error"):
+                        scheduler_jobs_data = scheduler_jobs_result
+                        if self.debug:
+                            logger.debug(f"[REPORT] Scheduler jobs for {database_name}: {len(scheduler_jobs_data.get('jobs', []))} jobs, retention={scheduler_jobs_data.get('global_retention')}")
+                    else:
+                        logger.warning(f"[REPORT] Error fetching scheduler jobs for {database_name}: {scheduler_jobs_result.get('error')}")
+                except Exception as e:
+                    logger.warning(f"[REPORT] Error getting scheduler jobs: {e}")
 
             # Group results by category
             categories = {}
@@ -901,13 +1117,13 @@ validation_rules:
                 "score_color": "#10b981",
                 "categories": categories,
                 "category_order": [
-                    "Memory Configuration",
-                    "Feature Configuration",
-                    "Database Objects",
-                ],
-                "password_validation_results": pwd_validation_results.get(database_name) if database_name and pwd_validation_results else None,
-                "scheduler_jobs": scheduler_jobs.get(database_name) if database_name and scheduler_jobs else None,
-            }
+                     "Memory Configuration",
+                     "Feature Configuration",
+                     "Database Objects",
+                 ],
+                 "password_validation_results": pwd_validation_results.get(database_name) if database_name else None,
+                 "scheduler_jobs": scheduler_jobs_data,
+                 }
             
             # Calculate overall score for single database
             if database_name and database_name in summary:
@@ -958,7 +1174,7 @@ validation_rules:
                     # Format: oracle_health_check_DBNAME_YYYYMMDD_HHMMSS.html or oracle_health_check_YYYYMMDD_HHMMSS.html
                     try:
                         # Use regex to extract: oracle_health_check_([^_]*)_?(20\d{6})_(\d{6})\.html or oracle_health_check_(20\d{6})_(\d{6})\.html
-                        match = re.match(r'oracle_health_check_([^_]*?)_(20\d{6})_(\d{6})\.html$', filename)
+                        match = re.match(r'oracle_health_check_(.*)_(20\d{6})_(\d{6})\.html$', filename)
                         if match:
                             db_name = match.group(1)
                             date_part = match.group(2)
@@ -1201,6 +1417,7 @@ validation_rules:
             if not db:
                 continue
 
+            conn = None
             try:
                 conn = self._get_connection(db)
                 cur = conn.cursor()
@@ -1257,8 +1474,6 @@ validation_rules:
                         f"[PROFILES] {db_name}: {passed_count}/{total_count} profiles passed"
                     )
 
-                conn.close()
-
             except Exception as e:
                 logger.warning(f"[PROFILES] Error processing {db_name}: {e}")
                 results[db_name] = {
@@ -1267,6 +1482,10 @@ validation_rules:
                         f"{db.hostname}:{db.port}/{db.service}" if db else "Unknown"
                     ),
                 }
+            finally:
+                # Release connection back to pool
+                if conn:
+                    self._release_connection(conn, db_name)
 
         return results
 
