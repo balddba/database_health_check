@@ -6,7 +6,7 @@ from .validation_check import ValidationCheck, ValidationType
 
 
 def create_check() -> ValidationCheck:
-    """Create PGA_AGGREGATE_TARGET_REQUIRED check.
+    """Create the PGA_AGGREGATE_TARGET_REQUIRED check.
 
     Returns:
         ValidationCheck: The configured PGA_AGGREGATE_TARGET validation check.

@@ -9,7 +9,7 @@ def _normalize_optimizer_mode(value) -> str:
     """Normalize optimizer mode value to lowercase.
 
     Returns:
-        str: Normalized optimizer mode value.
+        str: The normalized optimizer mode value.
     """
     if value is None:
         return "NOT SET"
@@ -18,7 +18,7 @@ def _normalize_optimizer_mode(value) -> str:
 
 
 def create_check() -> ValidationCheck:
-    """Create OPTIMIZER_MODE check.
+    """Create the OPTIMIZER_MODE check.
 
     Returns:
         ValidationCheck: The configured OPTIMIZER_MODE validation check.

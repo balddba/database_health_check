@@ -6,7 +6,7 @@ from .validation_check import ValidationCheck, ValidationType
 
 
 def create_check() -> ValidationCheck:
-    """Create JOB_QUEUE_PROCESSES_MIN check.
+    """Create the JOB_QUEUE_PROCESSES_MIN check.
 
     Returns:
         ValidationCheck: The configured JOB_QUEUE_PROCESSES validation check.

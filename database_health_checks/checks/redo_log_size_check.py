@@ -17,7 +17,9 @@ class RedoLogSizeCheck(CheckBaseModel):
             description="Online redo logs should be at least 1GB in size for optimal performance.",
         )
 
-    def execute(self, cursor, database_name: str, rule_value=None, **kwargs) -> CheckResult:
+    def execute(
+        self, cursor, database_name: str, rule_value=None, **kwargs
+    ) -> CheckResult:
         """Execute the redo log size check.
 
         Args:
@@ -38,7 +40,7 @@ class RedoLogSizeCheck(CheckBaseModel):
                 expected_value="Not Required",
                 message="Check not required",
             )
-        
+
         try:
             # Query all online redo log sizes
             cursor.execute("SELECT group#, bytes FROM v$log ORDER BY group#")
@@ -55,7 +57,7 @@ class RedoLogSizeCheck(CheckBaseModel):
 
             # 1GB in bytes
             one_gb = 1073741824
-            
+
             # Check if all redo logs are at least 1GB
             logs_meeting_requirement = []
             logs_below_requirement = []
@@ -63,7 +65,7 @@ class RedoLogSizeCheck(CheckBaseModel):
             for row in rows:
                 group_num = row[0]
                 log_size_bytes = row[1]
-                
+
                 if log_size_bytes >= one_gb:
                     logs_meeting_requirement.append((group_num, log_size_bytes))
                 else:
@@ -81,7 +83,9 @@ class RedoLogSizeCheck(CheckBaseModel):
 
             if passed:
                 min_size = min(log[1] for log in logs_meeting_requirement)
-                actual_value = f"All {total_logs} redo logs >= 1GB (min: {format_size(min_size)})"
+                actual_value = (
+                    f"All {total_logs} redo logs >= 1GB (min: {format_size(min_size)})"
+                )
             else:
                 min_size = min(log[1] for log in logs_below_requirement)
                 actual_value = f"{num_meeting}/{total_logs} >= 1GB, {num_below} below (min: {format_size(min_size)})"
@@ -90,7 +94,10 @@ class RedoLogSizeCheck(CheckBaseModel):
 
             message = ""
             if not passed:
-                invalid_groups = [f"Group {g}({format_size(s)})" for g, s in logs_below_requirement[:3]]
+                invalid_groups = [
+                    f"Group {g}({format_size(s)})"
+                    for g, s in logs_below_requirement[:3]
+                ]
                 if len(logs_below_requirement) > 3:
                     invalid_groups.append(f"+{len(logs_below_requirement) - 3} more")
                 message = f"Found {num_below} redo log(s) below 1GB: {', '.join(invalid_groups)}"

@@ -17,7 +17,9 @@ class ControlFileMultiplexingCheck(CheckBaseModel):
             description="Control files should be multiplexed across at least two different disk groups for high availability.",
         )
 
-    def execute(self, cursor, database_name: str, rule_value=None, **kwargs) -> CheckResult:
+    def execute(
+        self, cursor, database_name: str, rule_value=None, **kwargs
+    ) -> CheckResult:
         """Execute the control file multiplexing check.
 
         Args:
@@ -38,7 +40,7 @@ class ControlFileMultiplexingCheck(CheckBaseModel):
                 expected_value="Not Required",
                 message="Check not required",
             )
-        
+
         try:
             # Query control file locations
             cursor.execute("SELECT name FROM v$controlfile ORDER BY name")
@@ -75,7 +77,9 @@ class ControlFileMultiplexingCheck(CheckBaseModel):
                     disk_groups.add(parent_dir)
 
             num_disk_groups = len(disk_groups)
-            actual_value = f"{num_disk_groups} disk group(s): {', '.join(sorted(disk_groups))}"
+            actual_value = (
+                f"{num_disk_groups} disk group(s): {', '.join(sorted(disk_groups))}"
+            )
             expected_value = ">= 2 disk groups"
             passed = num_disk_groups >= 2
 

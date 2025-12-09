@@ -5,7 +5,7 @@ access to database configurations for health checks.
 """
 
 import os
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import oracledb
 import yaml
@@ -48,18 +48,17 @@ class OracleDatabase(BaseModel):
 
 
 class Inventory:
-    """Manages database inventory loaded from YAML configuration file."""
+    """Manage database inventory loaded from a YAML configuration file."""
 
     def __init__(self, config_path: Optional[str] = None) -> None:
-        """Initialize inventory from YAML file.
+        """Initialize inventory from a YAML file.
 
         Args:
-            config_path (str, optional): Path to databases.example.yaml file.
-                If None, uses default location in same directory.
+            config_path (str, optional): Path to databases.yaml file.
+                If None, uses the default location in the same directory.
 
         Raises:
-            FileNotFoundError: If config file not found.
-            ValueError: If config file is invalid.
+            FileNotFoundError: If the config file is not found.
         """
         if config_path is None:
             config_path = os.path.join(
@@ -75,17 +74,19 @@ class Inventory:
         self._load_from_yaml()
 
     def _load_from_yaml(self) -> None:
-        """Load database configurations from YAML file.
+        """Load database configurations from a YAML file.
 
         Raises:
-            ValueError: If YAML is invalid or required fields are missing.
+            ValueError: If the YAML is invalid or required fields are missing.
         """
         try:
             with open(self.config_path, "r") as f:
                 config = yaml.safe_load(f)
 
             if not config or "databases" not in config:
-                raise ValueError("Invalid inventory format: missing 'databases' section")
+                raise ValueError(
+                    "Invalid inventory format: missing 'databases' section"
+                )
 
             databases_config = config.get("databases", {})
             if not databases_config:
@@ -95,7 +96,11 @@ class Inventory:
                 try:
                     # Resolve environment variables in password if needed
                     password = db_config.get("password", "")
-                    if isinstance(password, str) and password.startswith("${") and password.endswith("}"):
+                    if (
+                        isinstance(password, str)
+                        and password.startswith("${")
+                        and password.endswith("}")
+                    ):
                         env_var = password[2:-1]
                         password = os.environ.get(env_var, "")
                         if not password:
@@ -114,7 +119,9 @@ class Inventory:
                     )
                     self.databases[db_name] = db
                 except (KeyError, TypeError) as e:
-                    raise ValueError(f"Invalid database configuration for {db_name}: {e}")
+                    raise ValueError(
+                        f"Invalid database configuration for {db_name}: {e}"
+                    )
 
         except yaml.YAMLError as e:
             raise ValueError(f"Failed to parse inventory YAML: {e}")
@@ -123,18 +130,18 @@ class Inventory:
         """Get a specific database by name.
 
         Args:
-            name (str): Database name.
+            name (str): The database name.
 
         Returns:
-            OracleDatabase: Database configuration or None if not found.
+            OracleDatabase: The database configuration, or None if not found.
         """
         return self.databases.get(name)
 
     def get_database_names(self) -> List[str]:
-        """Get list of all configured database names.
+        """Get a list of all configured database names.
 
         Returns:
-            List[str]: Sorted list of database names.
+            List[str]: A sorted list of database names.
         """
         return sorted(self.databases.keys())
 
@@ -142,6 +149,6 @@ class Inventory:
         """Get all configured databases.
 
         Returns:
-            List[OracleDatabase]: List of all database configurations.
+            List[OracleDatabase]: A list of all database configurations.
         """
         return list(self.databases.values())

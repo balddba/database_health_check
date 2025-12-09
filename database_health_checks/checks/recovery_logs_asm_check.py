@@ -17,7 +17,9 @@ class RecoveryLogsASMCheck(CheckBaseModel):
             description="Recovery logs (redo logs) should be stored in the +RECO ASM disk group.",
         )
 
-    def execute(self, cursor, database_name: str, rule_value=None, **kwargs) -> CheckResult:
+    def execute(
+        self, cursor, database_name: str, rule_value=None, **kwargs
+    ) -> CheckResult:
         """Execute the recovery logs ASM check.
 
         Args:
@@ -38,7 +40,7 @@ class RecoveryLogsASMCheck(CheckBaseModel):
                 expected_value="Not Required",
                 message="Check not required",
             )
-        
+
         try:
             # Query all redo log files (online redo logs)
             cursor.execute("SELECT member FROM v$logfile ORDER BY member")
@@ -72,7 +74,9 @@ class RecoveryLogsASMCheck(CheckBaseModel):
             if passed:
                 actual_value = f"{num_in_reco}/{total_logs} redo logs in +RECO"
             else:
-                actual_value = f"{num_in_reco}/{total_logs} in +RECO, {num_not_in_reco} elsewhere"
+                actual_value = (
+                    f"{num_in_reco}/{total_logs} in +RECO, {num_not_in_reco} elsewhere"
+                )
 
             expected_value = "All redo logs in +RECO"
 

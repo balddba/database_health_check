@@ -27,8 +27,8 @@ from database_health_checks.checks import (
     pga_aggregate_limit_required_check,
     pga_aggregate_target_required_check,
     processes_min_check,
-    redo_log_size_check,
     recovery_logs_asm_check,
+    redo_log_size_check,
     scheduler_jobs_status_check,
     scheduler_log_retention_check,
     sessions_min_check,
@@ -154,13 +154,13 @@ class CheckRegistry:
         """Get a check by name.
 
         Args:
-            check_name: Name of the check (e.g., "sga_target_min_gb").
+            check_name: The name of the check (e.g., "sga_target_min_gb").
 
         Returns:
             CheckBaseModel: The check instance.
 
         Raises:
-            KeyError: If check is not found.
+            KeyError: If the check is not found.
         """
         if check_name not in self._checks:
             raise KeyError(f"Check '{check_name}' not found in registry")
@@ -170,7 +170,7 @@ class CheckRegistry:
         """Get all registered checks.
 
         Returns:
-            Dictionary of all checks.
+            A dictionary of all checks.
         """
         return self._checks.copy()
 

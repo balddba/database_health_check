@@ -6,7 +6,7 @@ from .validation_check import ValidationCheck, ValidationType
 
 
 def create_check() -> ValidationCheck:
-    """Create SGA_TARGET_MIN_GB check.
+    """Create the SGA_TARGET_MIN_GB check.
 
     Returns:
         ValidationCheck: The configured SGA_TARGET_MIN validation check.

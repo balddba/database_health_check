@@ -11,7 +11,7 @@ def _normalize_boolean(value) -> str:
     Handles: YES, NO, TRUE, FALSE, Y, N, 1, 0, NONE, FORCE LOGGING, etc.
 
     Returns:
-        str: Normalized boolean value as 'True' or 'False'.
+        str: The normalized boolean value as 'True' or 'False'.
     """
     if value is None:
         return "False"
@@ -27,7 +27,7 @@ def _normalize_boolean(value) -> str:
 
 
 def create_check() -> ValidationCheck:
-    """Create FORCE_LOGGING check.
+    """Create the FORCE_LOGGING check.
 
     Returns:
         ValidationCheck: The configured FORCE_LOGGING validation check.

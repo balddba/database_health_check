@@ -6,7 +6,7 @@ from .validation_check import ValidationCheck, ValidationType
 
 
 def create_check() -> ValidationCheck:
-    """Create SGA_MAX_SIZE_REQUIRED check.
+    """Create the SGA_MAX_SIZE_REQUIRED check.
 
     Returns:
         ValidationCheck: The configured SGA_MAX_SIZE validation check.

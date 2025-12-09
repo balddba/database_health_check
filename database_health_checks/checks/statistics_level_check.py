@@ -9,7 +9,7 @@ def _normalize_statistics_level(value) -> str:
     """Normalize statistics level value to uppercase.
 
     Returns:
-        str: Normalized statistics level value.
+        str: The normalized statistics level value.
     """
     if value is None:
         return "NOT SET"
@@ -18,7 +18,7 @@ def _normalize_statistics_level(value) -> str:
 
 
 def create_check() -> ValidationCheck:
-    """Create STATISTICS_LEVEL check.
+    """Create the STATISTICS_LEVEL check.
 
     Returns:
         ValidationCheck: The configured STATISTICS_LEVEL validation check.

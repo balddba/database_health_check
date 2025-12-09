@@ -17,7 +17,9 @@ class SchedulerJobsStatusCheck(CheckBaseModel):
             description="Reports on scheduler jobs status. Alerts if purge/cleanup jobs are disabled.",
         )
 
-    def execute(self, cursor, database_name: str, rule_value=None, **kwargs) -> CheckResult:
+    def execute(
+        self, cursor, database_name: str, rule_value=None, **kwargs
+    ) -> CheckResult:
         """Execute the scheduler jobs status check.
 
         Args:

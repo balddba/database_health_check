@@ -1,7 +1,7 @@
 """Base class for all database checks."""
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Union
 
 from database_health_checks.models.check_catagory import CheckCategory
 from database_health_checks.models.check_result import CheckResult
@@ -16,10 +16,10 @@ class CheckBaseModel(ABC):
         """Initialize a check.
 
         Args:
-            name: Internal check identifier (e.g., "sga_target_min_gb")
-            check_name: Display name for results (e.g., "SGA_TARGET_MIN")
-            category: Category of the check
-            description: Human-readable description
+            name: The internal check identifier (e.g., "sga_target_min_gb")
+            check_name: The display name for results (e.g., "SGA_TARGET_MIN")
+            category: The category of the check
+            description: The human-readable description
         """
         self.name = name
         self.check_name = check_name
@@ -31,12 +31,12 @@ class CheckBaseModel(ABC):
         """Execute the check against a database.
 
         Args:
-            cursor: Database cursor for executing queries.
-            database_name: Name of the database being checked.
+            cursor: The database cursor for executing queries.
+            database_name: The name of the database being checked.
             **kwargs: Additional arguments specific to the check type
 
         Returns:
-            CheckResult: Result of the check.
+            CheckResult: The result of the check.
         """
         pass
 
@@ -44,21 +44,21 @@ class CheckBaseModel(ABC):
         self,
         database_name: str,
         passed: bool,
-        actual_value: Any,
-        expected_value: Any,
+        actual_value: Union[str, int, float, bool],
+        expected_value: Union[str, int, float, bool],
         message: str = "",
     ) -> CheckResult:
         """Create a CheckResult for this check.
 
         Args:
-            database_name: Name of the database.
+            database_name: The name of the database.
             passed: Whether the check passed.
-            actual_value: Actual value found.
-            expected_value: Expected value.
-            message: Optional message.
+            actual_value: The actual value found.
+            expected_value: The expected value.
+            message: An optional message.
 
         Returns:
-            CheckResult: Formatted result.
+            CheckResult: The formatted result.
         """
         if not message and not passed:
             message = self.description

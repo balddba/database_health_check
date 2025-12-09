@@ -17,7 +17,9 @@ class ManagementPackCheck(CheckBaseModel):
             description="Management pack and tuning pack should be enabled for optimal monitoring and performance tuning.",
         )
 
-    def execute(self, cursor, database_name: str, rule_value=None, **kwargs) -> CheckResult:
+    def execute(
+        self, cursor, database_name: str, rule_value=None, **kwargs
+    ) -> CheckResult:
         """Execute the management pack check.
 
         Args:
@@ -38,7 +40,7 @@ class ManagementPackCheck(CheckBaseModel):
                 expected_value="Not Required",
                 message="Check not required",
             )
-        
+
         try:
             # Query for available packs/options
             # Tuning Pack, Diagnostics Pack, and other options can be checked
@@ -60,12 +62,14 @@ class ManagementPackCheck(CheckBaseModel):
             enabled_packs = [row[0] for row in rows]
             required_packs = {"Tuning Pack", "Diagnostics Pack"}
             enabled_set = set(enabled_packs)
-            
+
             missing_packs = required_packs - enabled_set
             passed = len(missing_packs) == 0
 
             if passed:
-                actual_value = f"All required packs enabled: {', '.join(sorted(enabled_packs))}"
+                actual_value = (
+                    f"All required packs enabled: {', '.join(sorted(enabled_packs))}"
+                )
             else:
                 actual_value = f"Enabled: {', '.join(sorted(enabled_packs)) if enabled_packs else 'None'}"
 

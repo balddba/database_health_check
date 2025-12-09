@@ -15,14 +15,14 @@ class ConnectionMode(str, Enum):
 class DatabaseConfig(BaseModel):
     """Single database connection configuration."""
 
-    name: str = Field(..., description="Database identifier/alias")
-    host: str = Field(..., description="Hostname or IP address")
-    port: int = Field(1521, description="Oracle listener port")
-    service: str = Field(..., description="Oracle service name")
-    username: str = Field("sys", description="Database username")
-    password: str = Field(..., description="Database password")
+    name: str = Field(..., description="The database identifier/alias")
+    host: str = Field(..., description="The hostname or IP address")
+    port: int = Field(1521, description="The Oracle listener port")
+    service: str = Field(..., description="The Oracle service name")
+    username: str = Field("sys", description="The database username")
+    password: str = Field(..., description="The database password")
     mode: ConnectionMode = Field(
-        ConnectionMode.SYSDBA, description="Connection mode (sysdba, normal)"
+        ConnectionMode.SYSDBA, description="The connection mode (sysdba, normal)"
     )
 
     class Config:

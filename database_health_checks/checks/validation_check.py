@@ -1,7 +1,7 @@
 """Validation checks based on rules (simple threshold comparisons)."""
 
 from enum import Enum
-from typing import Any, Callable, Optional
+from typing import Callable, Optional, Union
 
 from database_health_checks.models.check_base_model import CheckBaseModel
 from database_health_checks.models.check_catagory import CheckCategory
@@ -28,8 +28,8 @@ class ValidationCheck(CheckBaseModel):
         description: str,
         query: str,
         validation_type: ValidationType,
-        threshold: Optional[Any] = None,
-        value_normalizer: Optional[Callable[[Any], Any]] = None,
+        threshold: Optional[Union[str, int, float, bool]] = None,
+        value_normalizer: Optional[Callable[[Union[str, int, float, bool]], Union[str, int, float, bool]]] = None,
     ):
         """Initialize a validation check.
 
@@ -53,8 +53,8 @@ class ValidationCheck(CheckBaseModel):
         self,
         cursor,
         database_name: str,
-        rule_value: Optional[Any] = None,
-        transform: Optional[Callable[[Any], Any]] = None,
+        rule_value: Optional[Union[str, int, float, bool]] = None,
+        transform: Optional[Callable[[Union[str, int, float, bool]], Union[str, int, float, bool]]] = None,
         **kwargs,
     ) -> CheckResult:
         """Execute the validation check.
@@ -125,12 +125,12 @@ class ValidationCheck(CheckBaseModel):
                 message=f"Error executing check: {e}",
             )
 
-    def _validate(self, actual: Any, threshold: Any) -> bool:
+    def _validate(self, actual: Union[str, int, float, bool], threshold: Union[str, int, float, bool]) -> bool:
         """Validate actual value against threshold.
 
         Args:
-            actual: Actual value from database.
-            threshold: Expected/threshold value.
+            actual: The actual value from the database.
+            threshold: The expected/threshold value.
 
         Returns:
             bool: True if valid, False otherwise.
@@ -161,14 +161,14 @@ class ValidationCheck(CheckBaseModel):
                 return False
         return False
 
-    def _get_expected_value(self, threshold: Any) -> str:
-        """Get human-readable expected value string.
+    def _get_expected_value(self, threshold: Union[str, int, float, bool]) -> str:
+        """Get a human-readable expected value string.
 
         Args:
-            threshold: Rule threshold or requirement value.
+            threshold: The rule threshold or requirement value.
 
         Returns:
-            str: Human-readable expected value.
+            str: A human-readable expected value.
         """
         if self.validation_type == ValidationType.REQUIRED:
             return "Set/Enabled" if threshold else "Not Required"

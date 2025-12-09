@@ -6,7 +6,7 @@ from .validation_check import ValidationCheck, ValidationType
 
 
 def create_check() -> ValidationCheck:
-    """Create DISM_ENABLED check.
+    """Create the DISM_ENABLED check.
 
     Returns:
         ValidationCheck: The configured DISM_ENABLED validation check.

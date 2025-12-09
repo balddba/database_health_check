@@ -6,7 +6,7 @@ from .validation_check import ValidationCheck, ValidationType
 
 
 def create_check() -> ValidationCheck:
-    """Create JOBS_ENABLED_MIN check.
+    """Create the JOBS_ENABLED_MIN check.
 
     Returns:
         ValidationCheck: The configured JOBS_ENABLED validation check.

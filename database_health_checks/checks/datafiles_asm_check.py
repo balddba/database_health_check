@@ -17,7 +17,9 @@ class DatafilesASMCheck(CheckBaseModel):
             description="All datafiles should be stored in the +DATA ASM disk group.",
         )
 
-    def execute(self, cursor, database_name: str, rule_value=None, **kwargs) -> CheckResult:
+    def execute(
+        self, cursor, database_name: str, rule_value=None, **kwargs
+    ) -> CheckResult:
         """Execute the datafiles ASM check.
 
         Args:
@@ -38,7 +40,7 @@ class DatafilesASMCheck(CheckBaseModel):
                 expected_value="Not Required",
                 message="Check not required",
             )
-        
+
         try:
             # Query all datafile names
             cursor.execute("SELECT name FROM v$datafile ORDER BY name")
@@ -81,7 +83,9 @@ class DatafilesASMCheck(CheckBaseModel):
                 invalid_files = ", ".join(datafiles_not_in_data[:3])
                 if len(datafiles_not_in_data) > 3:
                     invalid_files += f"... (+{len(datafiles_not_in_data) - 3} more)"
-                message = f"Found {num_not_in_data} datafile(s) not in +DATA: {invalid_files}"
+                message = (
+                    f"Found {num_not_in_data} datafile(s) not in +DATA: {invalid_files}"
+                )
 
             return self._create_result(
                 database_name=database_name,

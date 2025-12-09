@@ -12,7 +12,7 @@ def _normalize_audit_trail(value) -> str:
     Treats any other value as enabled (True).
 
     Returns:
-        str: Normalized value as 'True' or 'False'.
+        str: The normalized value as 'True' or 'False'.
     """
     if value is None:
         return "False"
@@ -26,7 +26,7 @@ def _normalize_audit_trail(value) -> str:
 
 
 def create_check() -> ValidationCheck:
-    """Create UNIFIED_AUDITING_ENABLED check.
+    """Create the UNIFIED_AUDITING_ENABLED check.
 
     Returns:
         ValidationCheck: The configured UNIFIED_AUDITING validation check.

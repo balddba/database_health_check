@@ -6,7 +6,7 @@ from .validation_check import ValidationCheck, ValidationType
 
 
 def create_check() -> ValidationCheck:
-    """Create MEMORY_TARGET_REQUIRED check.
+    """Create the MEMORY_TARGET_REQUIRED check.
 
     Returns:
         ValidationCheck: The configured MEMORY_TARGET validation check.

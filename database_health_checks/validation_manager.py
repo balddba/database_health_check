@@ -1,7 +1,7 @@
 """Validation manager module."""
 
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Dict, Optional, Union
 
 import yaml
 
@@ -13,7 +13,7 @@ class ValidationManager:
         """Initialize the validation manager.
 
         Args:
-             yaml_path: The path to validation_rules.yaml file. If None, uses default location.
+             yaml_path: The path to the validation_rules.yaml file. If None, uses the default location.
         """
         if yaml_path is None:
             yaml_path = Path(__file__).parent / "validation_rules.yaml"
@@ -23,11 +23,11 @@ class ValidationManager:
         self.yaml_path = yaml_path
         self._data = self._load_yaml()
 
-    def _load_yaml(self) -> Dict[str, Any]:
+    def _load_yaml(self) -> Dict[str, Union[str, int, float, bool, dict, list]]:
         """Load and parse the validation rules YAML file.
 
         Returns:
-            Dictionary with 'defaults' and 'overrides' keys.
+            A dictionary with 'defaults' and 'overrides' keys.
         """
         if not self.yaml_path.exists():
             raise FileNotFoundError(
@@ -56,16 +56,16 @@ class ValidationManager:
             "overrides": rules.get("overrides", {}),
         }
 
-    def get_rules(self, database_name: str) -> Dict[str, Any]:
+    def get_rules(self, database_name: str) -> Dict[str, Union[str, int, float, bool, dict, list]]:
         """Get validation rules for a specific database.
 
         Uses defaults with database-specific overrides applied.
 
         Args:
-            database_name: Name of the database (from config).
+            database_name: The name of the database (from config).
 
         Returns:
-            Dictionary of validation rules for the database.
+            A dictionary of validation rules for the database.
         """
         # Start with defaults
         rules = dict(self._data["defaults"])
@@ -80,28 +80,28 @@ class ValidationManager:
         """Get the set of rule keys that are overridden for a specific database.
 
         Args:
-            database_name: Name of the database (from config).
+            database_name: The name of the database (from config).
 
         Returns:
-            Set of rule keys that have database-specific overrides.
+            A set of rule keys that have database-specific overrides.
         """
         if database_name in self._data["overrides"]:
             return set(self._data["overrides"][database_name].keys())
         return set()
 
-    def get_default_rules(self) -> Dict[str, Any]:
+    def get_default_rules(self) -> Dict[str, Union[str, int, float, bool, dict, list]]:
         """Get the default validation rules.
 
         Returns:
-            Dictionary of default validation rules.
+            A dictionary of default validation rules.
         """
         return dict(self._data["defaults"])
 
-    def get_overrides(self) -> Dict[str, Dict[str, Any]]:
+    def get_overrides(self) -> Dict[str, Dict[str, Union[str, int, float, bool, dict, list]]]:
         """Get all database-specific overrides.
 
         Returns:
-            Dictionary of overrides (key = database name).
+            A dictionary of overrides (key = database name).
         """
         return dict(self._data["overrides"])
 
@@ -109,10 +109,10 @@ class ValidationManager:
         """Get password validation function configurations.
 
         Args:
-            database_name: Name of the database. If None, uses defaults.
+            database_name: The name of the database. If None, uses defaults.
 
         Returns:
-            List of dicts with 'validation_function' and 'profiles' keys.
+            A list of dictionaries with 'validation_function' and 'profiles' keys.
         """
         rules = (
             self.get_rules(database_name) if database_name else self._data["defaults"]

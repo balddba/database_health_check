@@ -6,7 +6,7 @@ from .validation_check import ValidationCheck, ValidationType
 
 
 def create_check() -> ValidationCheck:
-    """Create OPEN_DBLINKS_MAX check.
+    """Create the OPEN_DBLINKS_MAX check.
 
     Returns:
         ValidationCheck: The configured OPEN_DBLINKS validation check.

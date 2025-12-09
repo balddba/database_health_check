@@ -8,7 +8,7 @@ import os
 import re
 import sys
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Union
 
 import oracledb
 from jinja2 import Environment, FileSystemLoader
@@ -55,7 +55,7 @@ class OracleHealthCheck:
         """Initialize the Oracle health check manager.
 
         Args:
-            validation_rules_path (str): Path to validation_rules.yaml configuration file.
+            validation_rules_path (str): The path to the validation_rules.yaml configuration file.
             debug (bool): Enable debug logging.
         """
         # Default to validation_rules.yaml in the database_health_checks directory
@@ -82,7 +82,7 @@ class OracleHealthCheck:
         if self.debug:
             logger.debug(f"[INIT] OracleHealthCheck initialized: debug={debug}")
 
-        # Always load inventory from default location
+        # Always load inventory from a default location
         try:
             self.inventory = Inventory()
             if self.debug:
@@ -109,10 +109,10 @@ class OracleHealthCheck:
         """Create a default validation_rules.yaml file if it doesn't exist.
 
         Args:
-            path (str): File path to validation_rules.yaml configuration file.
+            path (str): The file path to the validation_rules.yaml configuration file.
 
         Returns:
-            bool: True if file was created, False if already existed.
+            bool: True if the file was created, False if it already existed.
         """
         if os.path.exists(path):
             return False
@@ -170,18 +170,18 @@ validation_rules:
             return False
 
     def _load_validation_rules(self, path: str) -> Optional[ValidationManager]:
-        """Load validation rules from YAML file.
+        """Load validation rules from a YAML file.
 
         Args:
-            path (str): File path to validation_rules.yaml configuration file.
+            path (str): The file path to the validation_rules.yaml configuration file.
 
         Returns:
-            ValidationManager: Validation rules manager, or None if file not found.
+            ValidationManager: The validation rules manager, or None if the file is not found.
         """
         if self.debug:
             logger.debug(f"[CONFIG] Loading validation rules from {path}")
 
-        # Try to create default file if it doesn't exist
+        # Try to create the default file if it doesn't exist
         created = self._create_default_validation_rules(path)
 
         if not os.path.exists(path):
@@ -214,7 +214,7 @@ validation_rules:
             db: An OracleDatabase instance from the inventory.
 
         Returns:
-            oracledb.ConnectionPool: A connection pool instance.
+            oracledb.ConnectionPool: The connection pool instance.
         """
         pool_key = db.name
 
@@ -257,7 +257,7 @@ validation_rules:
             db: An OracleDatabase instance from the inventory.
 
         Returns:
-            oracledb.Connection: A database connection from the pool.
+            oracledb.Connection: The database connection from the pool.
         """
         try:
             pool = self._create_connection_pool(db)
@@ -276,7 +276,7 @@ validation_rules:
 
         Args:
             conn: The database connection to release.
-            db_name: Name of the database for logging.
+            db_name: The name of the database for logging.
         """
         try:
             if conn:
@@ -307,7 +307,7 @@ validation_rules:
             databases (List[str], optional): Filter by specific database names. If None, check all.
 
         Returns:
-            List[CheckResult]: Results of all checks performed.
+            List[CheckResult]: The results of all checks performed.
         """
         if not self.inventory:
             logger.error("No database inventory loaded.")
@@ -343,7 +343,7 @@ validation_rules:
                 except Exception as e:
                     logger.error(f"[CHECK] Error running checks for {db.name}: {e}")
                 finally:
-                    # Release connection back to pool
+                    # Release connection back to a pool
                     if conn:
                         self._release_connection(conn, db.name)
 
@@ -355,7 +355,7 @@ validation_rules:
         Runs validation-based checks from validation_rules.yaml against the registry.
 
         Args:
-            conn: Database connection.
+            conn: The database connection.
             db: An OracleDatabase instance from the inventory.
         """
         if not self.validation_manager:
@@ -366,22 +366,22 @@ validation_rules:
             return
 
         try:
-            # Get rules for this database (defaults + overrides)
+            # Get rules for this database (defaults and overrides)
             rules = self.validation_manager.get_rules(db.name)
             overridden_keys = self.validation_manager.get_overridden_keys(db.name)
             cur = conn.cursor()
 
             # Execute each check from the registry
             for rule_name, rule_value in rules.items():
-                # Skip if rule is disabled (None or False for required rules)
+                # Skip if a rule is disabled (None or False for required rules)
                 if rule_value is None:
                     continue
 
                 try:
-                    # Get the check from registry
+                    # Get the check from a registry
                     check = check_reg.get_check(rule_name)
 
-                    # Get transformation function if needed for this check
+                    # Get a transformation function if needed for this check
                     transformer = self._get_value_transformer(rule_name)
 
                     # Execute the check with rule-based parameters
@@ -404,7 +404,7 @@ validation_rules:
                         )
 
                 except KeyError:
-                    # Check not in registry, skip
+                    # Check not in a registry, skip
                     if self.debug:
                         logger.debug(
                             f"[CHECK] Check '{rule_name}' not in registry, skipping"
@@ -414,106 +414,114 @@ validation_rules:
                         f"[CHECK] Error executing check '{rule_name}' for {db.name}: {e}"
                     )
 
-            # Execute password validation function check if configured
+            # Execute a password validation function check if configured
             self._execute_password_validation_check(cur, db.name)
 
         except Exception as e:
             logger.warning(f"[CHECK] Error running checks for {db.name}: {e}")
 
     def _fetch_hostnames_from_db(self, db) -> List[str]:
-        """Fetch hostnames from gv$instance table.
+        """Fetch hostnames from the gv$instance table.
 
         For RAC databases, returns all hostnames in the cluster.
-        For single instance, returns the single hostname.
+        For a single instance, returns the single hostname.
 
         Args:
             db: An OracleDatabase instance from the inventory.
 
         Returns:
-            List[str]: List of hostnames, empty list if query fails.
+            List[str]: A list of hostnames, or an empty list if the query fails.
         """
         hostnames = []
         conn = None
         try:
             conn = self._get_connection(db)
             cur = conn.cursor()
-            
+
             # Try gv$instance first (works for RAC and single instance)
             try:
-                cur.execute("SELECT DISTINCT host_name FROM gv$instance ORDER BY host_name")
+                cur.execute(
+                    "SELECT DISTINCT host_name FROM gv$instance ORDER BY host_name"
+                )
                 rows = cur.fetchall()
                 if rows:
                     hostnames = [str(row[0]) for row in rows]
             except Exception:
-                # Fall back to v$instance for single instance
+                # Fall back to v$instance for a single instance
                 cur.execute("SELECT host_name FROM v$instance")
                 row = cur.fetchone()
                 if row:
                     hostnames = [str(row[0])]
-            
+
             cur.close()
         except Exception as e:
             if self.debug:
-                logger.debug(f"[HOSTNAME] Could not retrieve hostnames for {db.name}: {e}")
+                logger.debug(
+                    f"[HOSTNAME] Could not retrieve hostnames for {db.name}: {e}"
+                )
         finally:
-            # Release connection back to pool
+            # Release connection back to the pool
             if conn:
                 self._release_connection(conn, db.name)
-        
+
         return hostnames
 
     def _fetch_instance_names(self, db) -> List[str]:
-        """Fetch instance names from gv$instance table.
+        """Fetch instance names from the gv$instance table.
 
         For RAC databases, returns all instance names in the cluster.
-        For single instance, returns the single instance name.
+        For a single instance, returns the single instance name.
 
         Args:
             db: An OracleDatabase instance from the inventory.
 
         Returns:
-            List[str]: List of instance names, empty list if query fails.
+            List[str]: A list of instance names, or an empty list if the query fails.
         """
         instance_names = []
         conn = None
         try:
             conn = self._get_connection(db)
             cur = conn.cursor()
-            
+
             # Try gv$instance first (works for RAC and single instance)
             try:
-                cur.execute("SELECT DISTINCT instance_name FROM gv$instance ORDER BY instance_name")
+                cur.execute(
+                    "SELECT DISTINCT instance_name FROM gv$instance ORDER BY instance_name"
+                )
                 rows = cur.fetchall()
                 if rows:
                     instance_names = [str(row[0]) for row in rows]
             except Exception:
-                # Fall back to v$instance for single instance
+                # Fall back to v$instance for a single instance
                 cur.execute("SELECT instance_name FROM v$instance")
                 row = cur.fetchone()
                 if row:
                     instance_names = [str(row[0])]
-            
+
             cur.close()
         except Exception as e:
             if self.debug:
-                logger.debug(f"[INSTANCE] Could not retrieve instance names for {db.name}: {e}")
+                logger.debug(
+                    f"[INSTANCE] Could not retrieve instance names for {db.name}: {e}"
+                )
         finally:
-            # Release connection back to pool
+            # Release connection back to the pool
             if conn:
                 self._release_connection(conn, db.name)
-        
+
         return instance_names
 
-    def _get_value_transformer(self, rule_name: str) -> Optional[Any]:
-        """Get optional value transformer function for a rule.
+    def _get_value_transformer(self, rule_name: str) -> Optional[Callable[[Union[str, int, float]], float]]:
+        """Get an optional value transformer function for a rule.
 
         Some rules need value transformation (e.g., bytes to GB).
 
         Args:
-            rule_name: Name of the validation rule.
+            rule_name: The name of the validation rule.
 
         Returns:
-            Callable or None: Transformation function if needed.
+            Callable or None: A transformation function if needed.
         """
         transformers = {
             "sga_target_min_gb": lambda x: int(x) / (1024**3),  # bytes -> GB
@@ -523,11 +531,11 @@ validation_rules:
     def _execute_password_validation_check(
         self, cur: oracledb.Cursor, db_name: str
     ) -> None:
-        """Execute password validation function check if configured.
+        """Execute the password validation function check if configured.
 
         Args:
-            cur: Database cursor.
-            db_name: Name of the database.
+            cur: The database cursor.
+            db_name: The name of the database.
         """
         if not self.validation_manager:
             return
@@ -587,7 +595,7 @@ validation_rules:
         """List all available checks with their descriptions.
 
         Returns:
-            List[Dict]: List of checks with name, display name, category, and description.
+            List[Dict]: A list of checks with name, display name, category, and description.
         """
         checks = check_reg.get_all_checks()
         result = []
@@ -663,15 +671,15 @@ validation_rules:
         """Get all check results.
 
         Returns:
-            List[CheckResult]: List of all check results.
+            List[CheckResult]: A list of all check results.
         """
         return self.results
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> Dict[str, Dict[str, int]]:
         """Get a summary of check results.
 
         Returns:
-            Dict: Summary with passed/failed/total counts per database.
+            Dict: A summary with passed/failed/total counts per database.
         """
         summary: Dict[str, Dict[str, int]] = {}
 
@@ -809,32 +817,32 @@ validation_rules:
         # Print scheduler jobs with a retention period
         self._print_scheduler_jobs()
 
-    def _fetch_scheduler_jobs(self, db_name: str) -> Dict[str, Any]:
+    def _fetch_scheduler_jobs(self, db_name: str) -> Dict[str, Union[List[Dict[str, str]], int, None]]:
         """Fetch scheduler job information from the database.
 
         This is the single source of truth for retrieving scheduler job data.
         Used by both printing and HTML report generation.
 
         Args:
-            db_name (str): Database name to retrieve jobs for.
+            db_name (str): The database name to retrieve jobs for.
 
         Returns:
-            Dict with jobs list and global retention info.
+            Dict: A dictionary with the jobs list and global retention info.
         """
         result = {"jobs": [], "global_retention": 0, "error": None}
-        
+
         if not self.inventory:
             return result
-        
+
         db = self.inventory.get_database(db_name)
         if not db:
             return result
-        
+
         conn = None
         try:
             conn = self._get_connection(db)
             cur = conn.cursor()
-            
+
             # Get all scheduler jobs
             cur.execute(
                 """
@@ -844,17 +852,19 @@ validation_rules:
             """
             )
             jobs = cur.fetchall()
-            
+
             # Get global log_history
             try:
                 cur.execute(
                     "SELECT value FROM dba_scheduler_global_attribute WHERE attribute_name = 'log_history'"
                 )
                 log_row = cur.fetchone()
-                result["global_retention"] = int(log_row[0]) if (log_row and log_row[0]) else 0
+                result["global_retention"] = (
+                    int(log_row[0]) if (log_row and log_row[0]) else 0
+                )
             except Exception:
                 pass
-            
+
             # Process jobs into a standard format
             for job in jobs:
                 job_name = str(job[0]) if job[0] else "Unknown"
@@ -863,32 +873,36 @@ validation_rules:
                 enabled = str(job[3]) if job[3] else "FALSE"
                 state = str(job[4]) if job[4] else "Unknown"
                 schedule = str(job[5])[:50] if (job[5] and len(job) > 5) else "None"
-                
+
                 enabled_str = "YES" if enabled.upper() in ("TRUE", "Y", "1") else "NO"
                 is_purge = any(x in job_name.upper() for x in ["PURGE", "AUDIT_TRAIL"])
-                
-                result["jobs"].append({
-                    "name": job_name,
-                    "type": job_type,
-                    "class": job_class,
-                    "enabled": enabled_str,
-                    "state": state,
-                    "schedule": schedule,
-                    "is_purge": is_purge
-                })
-            
+
+                result["jobs"].append(
+                    {
+                        "name": job_name,
+                        "type": job_type,
+                        "class": job_class,
+                        "enabled": enabled_str,
+                        "state": state,
+                        "schedule": schedule,
+                        "is_purge": is_purge,
+                    }
+                )
+
         except Exception as e:
             result["error"] = str(e)
             if self.debug:
                 logger.debug(f"Error getting scheduler jobs for {db_name}: {e}")
         finally:
-            # Release connection back to pool
+            # Release connection back to the pool
             if conn:
                 self._release_connection(conn, db_name)
-        
+
         return result
-    
-    def _format_scheduler_jobs_for_print(self, db_name: str, jobs_info: Dict[str, Any]) -> str:
+
+    def _format_scheduler_jobs_for_print(
+        self, db_name: str, jobs_info: Dict[str, Union[List[Dict[str, str]], int, None]]
+    ) -> str:
         """Format scheduler jobs data for console printing.
 
         Args:
@@ -899,11 +913,11 @@ validation_rules:
             str: Formatted table data for tabulate.
         """
         table_data = []
-        
+
         for job in jobs_info["jobs"]:
             # Mark purge jobs with checkmark
             is_purge = "✓" if job["is_purge"] else " "
-            
+
             # Determine retention status
             retention = jobs_info["global_retention"]
             if retention >= 30:
@@ -912,19 +926,21 @@ validation_rules:
                 retention_status = f"{Colors.YELLOW}⚠{Colors.RESET}"
             else:
                 retention_status = f"{Colors.RED}✗{Colors.RESET}"
-            
-            table_data.append([
-                is_purge,
-                job["name"],
-                job["type"],
-                job["class"],
-                job["enabled"],
-                job["state"],
-                job["schedule"],
-                f"{retention}d" if retention > 0 else "Not set",
-                retention_status
-            ])
-        
+
+            table_data.append(
+                [
+                    is_purge,
+                    job["name"],
+                    job["type"],
+                    job["class"],
+                    job["enabled"],
+                    job["state"],
+                    job["schedule"],
+                    f"{retention}d" if retention > 0 else "Not set",
+                    retention_status,
+                ]
+            )
+
         return table_data
 
     def write_results_to_html(
@@ -933,12 +949,12 @@ validation_rules:
         """Write health check results to an HTML file.
 
         Args:
-            output_path (str, optional): Path to write the HTML report. If None, generates 
-                timestamped file in database_health_checks/reports/.
+            output_path (str, optional): The path to write the HTML report. If None, generates
+                a timestamped file in database_health_checks/reports/.
             database_name (str, optional): If provided, only includes results for this database.
 
         Returns:
-            str: Path to the generated HTML file.
+            str: The path to the generated HTML file.
         """
         if not self.results:
             logger.warning(
@@ -950,26 +966,33 @@ validation_rules:
             # Filter results by database if specified
             results_to_report = self.results
             if database_name:
-                results_to_report = [r for r in self.results if r.database == database_name]
+                results_to_report = [
+                    r for r in self.results if r.database == database_name
+                ]
                 if not results_to_report:
                     logger.warning(f"No results found for database: {database_name}")
                     return ""
-            
-            # Determine output path
+
+            # Determine the output path
             if output_path is None:
-                # Create reports directory if it doesn't exist
+                # Create a reports directory if it doesn't exist
                 reports_dir = os.path.join(
                     os.path.dirname(os.path.abspath(__file__)), "reports"
                 )
                 os.makedirs(reports_dir, exist_ok=True)
-                
+
                 # Generate timestamped filename
                 timestamp_filename = datetime.now().strftime("%Y%m%d_%H%M%S")
                 if database_name:
-                    output_path = os.path.join(reports_dir, f"oracle_health_check_{database_name}_{timestamp_filename}.html")
+                    output_path = os.path.join(
+                        reports_dir,
+                        f"oracle_health_check_{database_name}_{timestamp_filename}.html",
+                    )
                 else:
-                    output_path = os.path.join(reports_dir, f"oracle_health_check_{timestamp_filename}.html")
-            
+                    output_path = os.path.join(
+                        reports_dir, f"oracle_health_check_{timestamp_filename}.html"
+                    )
+
             # Get summary and database info
             summary = {}
             hostname = "N/A"  # Default hostname
@@ -982,7 +1005,7 @@ validation_rules:
                     summary[db_name]["passed"] += 1
                 else:
                     summary[db_name]["failed"] += 1
-            
+
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             # Get database hosts and connection info
@@ -998,17 +1021,21 @@ validation_rules:
                             "port": getattr(db, "port", "N/A"),
                             "service_name": getattr(db, "service_name", "N/A"),
                             "oracle_version": "N/A",  # Will be populated from results
-                            "instance_names": []  # Will be populated from gv$instance
+                            "instance_names": [],  # Will be populated from gv$instance
                         }
-            
+
             # Try to get oracle version and instance names from results or connection
             for result in results_to_report:
                 db_name = result.database
-                if db_name in db_info and result.actual_value and "oracle" in str(result.check_name).lower():
+                if (
+                    db_name in db_info
+                    and result.actual_value
+                    and "oracle" in str(result.check_name).lower()
+                ):
                     # Some checks might contain version info
                     pass
                 elif db_name in db_info:
-                    # Try to query oracle version and instance names from connection if available
+                    # Try to query oracle version and instance names from a connection if available
                     conn = None
                     try:
                         if self.inventory:
@@ -1016,84 +1043,124 @@ validation_rules:
                             if db:
                                 conn = self._get_connection(db)
                                 cur = conn.cursor()
-                                
+
                                 # Get oracle version
                                 try:
-                                    cur.execute("SELECT banner FROM v$version WHERE ROWNUM = 1")
+                                    cur.execute(
+                                        "SELECT banner FROM v$version WHERE ROWNUM = 1"
+                                    )
                                     version_row = cur.fetchone()
                                     if version_row:
-                                        db_info[db_name]["oracle_version"] = version_row[0]
+                                        db_info[db_name]["oracle_version"] = (
+                                            version_row[0]
+                                        )
                                 except Exception as e:
                                     if self.debug:
-                                        logger.debug(f"Could not retrieve Oracle version for {db_name}: {e}")
-                                
+                                        logger.debug(
+                                            f"Could not retrieve Oracle version for {db_name}: {e}"
+                                        )
+
                                 # Get hostnames from gv$instance
                                 try:
-                                    cur.execute("SELECT DISTINCT host_name FROM gv$instance ORDER BY host_name")
+                                    cur.execute(
+                                        "SELECT DISTINCT host_name FROM gv$instance ORDER BY host_name"
+                                    )
                                     rows = cur.fetchall()
                                     if rows:
-                                        db_info[db_name]["hostnames"] = [str(row[0]) for row in rows]
+                                        db_info[db_name]["hostnames"] = [
+                                            str(row[0]) for row in rows
+                                        ]
                                     else:
-                                        # Fall back to v$instance for single instance
+                                        # Fall back to v$instance for a single instance
                                         cur.execute("SELECT host_name FROM v$instance")
                                         row = cur.fetchone()
                                         if row:
-                                            db_info[db_name]["hostnames"] = [str(row[0])]
+                                            db_info[db_name]["hostnames"] = [
+                                                str(row[0])
+                                            ]
                                 except Exception as e:
                                     if self.debug:
-                                        logger.debug(f"Could not retrieve hostnames for {db_name}: {e}")
-                                
+                                        logger.debug(
+                                            f"Could not retrieve hostnames for {db_name}: {e}"
+                                        )
+
                                 # Get instance names
                                 try:
-                                    cur.execute("SELECT DISTINCT instance_name FROM gv$instance ORDER BY instance_name")
+                                    cur.execute(
+                                        "SELECT DISTINCT instance_name FROM gv$instance ORDER BY instance_name"
+                                    )
                                     rows = cur.fetchall()
                                     if rows:
-                                        db_info[db_name]["instance_names"] = [str(row[0]) for row in rows]
+                                        db_info[db_name]["instance_names"] = [
+                                            str(row[0]) for row in rows
+                                        ]
                                     else:
-                                        # Fall back to v$instance for single instance
-                                        cur.execute("SELECT instance_name FROM v$instance")
+                                        # Fall back to v$instance for a single instance
+                                        cur.execute(
+                                            "SELECT instance_name FROM v$instance"
+                                        )
                                         row = cur.fetchone()
                                         if row:
-                                            db_info[db_name]["instance_names"] = [str(row[0])]
+                                            db_info[db_name]["instance_names"] = [
+                                                str(row[0])
+                                            ]
                                 except Exception as e:
                                     if self.debug:
-                                        logger.debug(f"Could not retrieve instance names for {db_name}: {e}")
-                                
+                                        logger.debug(
+                                            f"Could not retrieve instance names for {db_name}: {e}"
+                                        )
+
                                 cur.close()
                     except Exception as e:
                         if self.debug:
-                            logger.debug(f"Could not establish connection for {db_name}: {e}")
+                            logger.debug(
+                                f"Could not establish connection for {db_name}: {e}"
+                            )
                     finally:
-                        # Release connection back to pool
+                        # Release connection back to the pool
                         if conn:
                             self._release_connection(conn, db_name)
-            
+
             # Update hostname from db_info if available
-            if database_name and database_name in db_info and db_info[database_name].get("hostnames"):
+            if (
+                database_name
+                and database_name in db_info
+                and db_info[database_name].get("hostnames")
+            ):
                 hostname = db_info[database_name]["hostnames"][0]
-            
+
             # Get password validation and scheduler job info for the databases
             pwd_validation_results = {}
             scheduler_jobs_data = None
             if database_name:
                 # Get password validation results for specific database
                 try:
-                    pwd_validation_results = self.get_profile_validation_results([database_name])
+                    pwd_validation_results = self.get_profile_validation_results(
+                        [database_name]
+                    )
                     if self.debug:
-                        logger.debug(f"[REPORT] Password validation results for {database_name}: {pwd_validation_results.keys()}")
+                        logger.debug(
+                            f"[REPORT] Password validation results for {database_name}: {pwd_validation_results.keys()}"
+                        )
                 except Exception as e:
-                    logger.warning(f"[REPORT] Error getting password validation results: {e}")
-                
+                    logger.warning(
+                        f"[REPORT] Error getting password validation results: {e}"
+                    )
+
                 # Get scheduler job info
                 try:
                     scheduler_jobs_result = self._fetch_scheduler_jobs(database_name)
-                    # Only include if no error (error key will be None if successful)
+                    # Only include if no error (the error key will be None if successful)
                     if not scheduler_jobs_result.get("error"):
                         scheduler_jobs_data = scheduler_jobs_result
                         if self.debug:
-                            logger.debug(f"[REPORT] Scheduler jobs for {database_name}: {len(scheduler_jobs_data.get('jobs', []))} jobs, retention={scheduler_jobs_data.get('global_retention')}")
+                            logger.debug(
+                                f"[REPORT] Scheduler jobs for {database_name}: {len(scheduler_jobs_data.get('jobs', []))} jobs, retention={scheduler_jobs_data.get('global_retention')}"
+                            )
                     else:
-                        logger.warning(f"[REPORT] Error fetching scheduler jobs for {database_name}: {scheduler_jobs_result.get('error')}")
+                        logger.warning(
+                            f"[REPORT] Error fetching scheduler jobs for {database_name}: {scheduler_jobs_result.get('error')}"
+                        )
                 except Exception as e:
                     logger.warning(f"[REPORT] Error getting scheduler jobs: {e}")
 
@@ -1117,34 +1184,46 @@ validation_rules:
                 "score_color": "#10b981",
                 "categories": categories,
                 "category_order": [
-                     "Memory Configuration",
-                     "Feature Configuration",
-                     "Database Objects",
-                 ],
-                 "password_validation_results": pwd_validation_results.get(database_name) if database_name else None,
-                 "scheduler_jobs": scheduler_jobs_data,
-                 }
-            
+                    "Memory Configuration",
+                    "Feature Configuration",
+                    "Database Objects",
+                ],
+                "password_validation_results": (
+                    pwd_validation_results.get(database_name) if database_name else None
+                ),
+                "scheduler_jobs": scheduler_jobs_data,
+            }
+
             # Calculate overall score for single database
             if database_name and database_name in summary:
                 counts = summary[database_name]
-                template_context["overall_score"] = int((counts["passed"] / counts["total"] * 100)) if counts["total"] > 0 else 0
+                template_context["overall_score"] = (
+                    int((counts["passed"] / counts["total"] * 100))
+                    if counts["total"] > 0
+                    else 0
+                )
                 score = template_context["overall_score"]
-                template_context["score_color"] = "#10b981" if score >= 80 else "#f59e0b" if score >= 50 else "#ef4444"
-            
+                template_context["score_color"] = (
+                    "#10b981"
+                    if score >= 80
+                    else "#f59e0b" if score >= 50 else "#ef4444"
+                )
+
             # Load and render template
-            template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
+            template_dir = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), "templates"
+            )
             env = Environment(loader=FileSystemLoader(template_dir))
             template = env.get_template("report_mui.html")
             html_content = template.render(**template_context)
 
-            # Write to file
+            # Write to the file
             with open(output_path, "w") as f:
                 f.write(html_content)
 
             logger.info(f"HTML report written to {output_path}")
             print(f"\n✓ HTML report generated: {output_path}")
-            
+
             return output_path
 
         except Exception as e:
@@ -1157,68 +1236,84 @@ validation_rules:
             reports_dir = os.path.join(
                 os.path.dirname(os.path.abspath(__file__)), "reports"
             )
-            
+
             if not os.path.exists(reports_dir):
                 logger.warning(f"Reports directory does not exist: {reports_dir}")
                 return
-            
+
             # Find all HTML reports
             reports = []
             for filename in sorted(os.listdir(reports_dir), reverse=True):
-                if filename.endswith(".html") and filename.startswith("oracle_health_check_"):
+                if filename.endswith(".html") and filename.startswith(
+                    "oracle_health_check_"
+                ):
                     if filename == "index.html":
                         continue
-                        
+
                     filepath = os.path.join(reports_dir, filename)
-                    # Extract timestamp and database name from filename
+                    # Extract the timestamp and database name from filename
                     # Format: oracle_health_check_DBNAME_YYYYMMDD_HHMMSS.html or oracle_health_check_YYYYMMDD_HHMMSS.html
                     try:
                         # Use regex to extract: oracle_health_check_([^_]*)_?(20\d{6})_(\d{6})\.html or oracle_health_check_(20\d{6})_(\d{6})\.html
-                        match = re.match(r'oracle_health_check_(.*)_(20\d{6})_(\d{6})\.html$', filename)
+                        match = re.match(
+                            r"oracle_health_check_(.*)_(20\d{6})_(\d{6})\.html$",
+                            filename,
+                        )
                         if match:
                             db_name = match.group(1)
                             date_part = match.group(2)
                             time_part = match.group(3)
                         else:
-                            # Try without database name
-                            match = re.match(r'oracle_health_check_(20\d{6})_(\d{6})\.html$', filename)
+                            # Try without the database name
+                            match = re.match(
+                                r"oracle_health_check_(20\d{6})_(\d{6})\.html$",
+                                filename,
+                            )
                             if match:
                                 db_name = "All Databases"
                                 date_part = match.group(1)
                                 time_part = match.group(2)
                             else:
-                                # Doesn't match expected format
+                                # Doesn't match the expected format
                                 if self.debug:
-                                    logger.debug(f"Skipping file {filename}: doesn't match expected naming pattern")
+                                    logger.debug(
+                                        f"Skipping file {filename}: doesn't match expected naming pattern"
+                                    )
                                 continue
-                        
+
                         # Format: 20250105 -> 2025-01-05, 091141 -> 09:11:41
-                        formatted_date = f"{date_part[:4]}-{date_part[4:6]}-{date_part[6:8]}"
-                        formatted_time = f"{time_part[:2]}:{time_part[2:4]}:{time_part[4:6]}"
+                        formatted_date = (
+                            f"{date_part[:4]}-{date_part[4:6]}-{date_part[6:8]}"
+                        )
+                        formatted_time = (
+                            f"{time_part[:2]}:{time_part[2:4]}:{time_part[4:6]}"
+                        )
                         file_stat = os.stat(filepath)
                         file_size = file_stat.st_size
                         file_size_kb = file_size / 1024
                         size_display = f"{file_size_kb:.1f} KB"
-                        
-                        reports.append({
-                            "filename": filename,
-                            "database": db_name,
-                            "timestamp": f"{formatted_date} {formatted_time}",
-                            "timestamp_key": f"{date_part}{time_part}",
-                            "size": file_size,
-                            "size_display": size_display,
-                            "url": filename
-                        })
+
+                        reports.append(
+                            {
+                                "filename": filename,
+                                "database": db_name,
+                                "timestamp": f"{formatted_date} {formatted_time}",
+                                "timestamp_key": f"{date_part}{time_part}",
+                                "size": file_size,
+                                "size_display": size_display,
+                                "url": filename,
+                            }
+                        )
                     except (ValueError, IndexError) as e:
-                        # Skip files that don't match expected naming
+                        # Skip files that don't match the expected naming
                         if self.debug:
                             logger.debug(f"Skipping file {filename}: {e}")
                         continue
-            
+
             if not reports:
                 logger.warning("No reports found in reports directory")
                 return
-            
+
             # Group by database
             by_database = {}
             for report in reports:
@@ -1226,11 +1321,11 @@ validation_rules:
                 if db not in by_database:
                     by_database[db] = []
                 by_database[db].append(report)
-            
+
             # Sort each database's reports by timestamp (newest first)
             for db in by_database:
                 by_database[db].sort(key=lambda x: x["timestamp_key"], reverse=True)
-            
+
             # Group by run timestamp
             by_run = {}
             for report in reports:
@@ -1239,30 +1334,32 @@ validation_rules:
                 if ts_key not in by_run:
                     by_run[ts_key] = {"timestamp": ts_display, "reports": []}
                 by_run[ts_key]["reports"].append(report)
-            
+
             # Sort runs by timestamp (newest first)
             sorted_runs = sorted(by_run.items(), key=lambda x: x[0], reverse=True)
             runs = {ts_key: run_info for ts_key, run_info in sorted_runs}
-            
+
             # Setup Jinja2 environment and render template
             template_dir = os.path.dirname(os.path.abspath(__file__))
-            jinja_env = Environment(loader=FileSystemLoader(os.path.join(template_dir, "templates")))
+            jinja_env = Environment(
+                loader=FileSystemLoader(os.path.join(template_dir, "templates"))
+            )
             template = jinja_env.get_template("index.html")
-            
+
             html_content = template.render(
                 reports=reports,
                 databases=sorted(by_database.keys()),
                 by_database=by_database,
                 runs=runs,
             )
-            
-            # Write index file
+
+            # Write the index file
             index_path = os.path.join(reports_dir, "index.html")
             with open(index_path, "w") as f:
                 f.write(html_content)
-            
+
             logger.info(f"Reports index created at {index_path}")
-            
+
         except Exception as e:
             logger.error(f"Failed to create reports index: {e}")
 
@@ -1282,12 +1379,16 @@ validation_rules:
 
             print(f"\n{db.name}")
 
-            # Fetch jobs using common method
+            # Fetch jobs using a common method
             jobs_info = self._fetch_scheduler_jobs(db_name)
-            
+
             if jobs_info.get("error"):
-                logger.error(f"[SCHEDULER] Error retrieving jobs for {db_name}: {jobs_info['error']}")
-                print(f"Error retrieving scheduler jobs - {str(jobs_info['error'])[:80]}")
+                logger.error(
+                    f"[SCHEDULER] Error retrieving jobs for {db_name}: {jobs_info['error']}"
+                )
+                print(
+                    f"Error retrieving scheduler jobs - {str(jobs_info['error'])[:80]}"
+                )
                 continue
 
             if not jobs_info["jobs"]:
@@ -1296,7 +1397,7 @@ validation_rules:
 
             # Format data for printing
             table_data = self._format_scheduler_jobs_for_print(db_name, jobs_info)
-            
+
             if table_data:
                 headers = [
                     "P",
@@ -1340,13 +1441,13 @@ validation_rules:
     # Profile Validation Methods
     # =====================================================================
     def _get_profiles_from_database(self, cursor) -> List[Dict[str, str]]:
-        """Query database for all profiles and their password validation functions.
+        """Query the database for all profiles and their password validation functions.
 
         Args:
-            cursor: Database cursor.
+            cursor: The database cursor.
 
         Returns:
-            List of dicts with 'profile' and 'validation_function' keys.
+            A list of dictionaries with 'profile' and 'validation_function' keys.
         """
         try:
             cursor.execute(
@@ -1378,14 +1479,14 @@ validation_rules:
 
     def get_profile_validation_results(
         self, databases: Optional[List[str]] = None
-    ) -> Dict[str, Dict[str, Any]]:
+    ) -> Dict[str, Dict[str, Union[str, int, float, bool, List]]]:
         """Get profile validation results for configured databases.
 
         Args:
             databases (List[str], optional): Filter by specific database names. If None, check all.
 
         Returns:
-            Dict mapping database names to validation results.
+            Dict: A dictionary mapping database names to validation results.
         """
         if not self.inventory or not self.validation_manager:
             if self.debug:
@@ -1479,11 +1580,11 @@ validation_rules:
                 results[db_name] = {
                     "error": str(e),
                     "host": (
-                        f"{db.hostname}:{db.port}/{db.service}" if db else "Unknown"
+                        f"{db.hostname}:{db.port}/{db.service_name}" if db else "Unknown"
                     ),
                 }
             finally:
-                # Release connection back to pool
+                # Release connection back to the pool
                 if conn:
                     self._release_connection(conn, db_name)
 
@@ -1492,7 +1593,7 @@ validation_rules:
     def print_profile_validation_report(
         self, databases: Optional[List[str]] = None
     ) -> None:
-        """Print profile validation report in tabular format.
+        """Print the profile validation report in tabular format.
 
         Args:
             databases (List[str], optional): Filter by specific database names. If None, check all.
@@ -1580,14 +1681,14 @@ if __name__ == "__main__":
 
         # Print profile validation report
         health_check.print_profile_validation_report()
-        
+
         # Generate individual reports for each database
         if health_check.results:
             databases = sorted(set(result.database for result in health_check.results))
             for db_name in databases:
                 health_check.write_results_to_html(database_name=db_name)
-        
-        # Create index page linking all reports
+
+        # Create an index page linking all reports
         health_check.create_reports_index()
 
     except Exception as e:

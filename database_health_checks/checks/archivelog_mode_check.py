@@ -11,7 +11,7 @@ def _normalize_boolean(value) -> str:
     Handles: YES, NO, TRUE, FALSE, Y, N, 1, 0, NONE, etc.
 
     Returns:
-        str: Normalized boolean value as 'True' or 'False'.
+        str: The normalized boolean value as 'True' or 'False'.
     """
     if value is None:
         return "False"
@@ -27,7 +27,7 @@ def _normalize_boolean(value) -> str:
 
 
 def create_check() -> ValidationCheck:
-    """Create ARCHIVELOG_MODE check.
+    """Create the ARCHIVELOG_MODE check.
 
     Returns:
         ValidationCheck: The configured ARCHIVELOG_MODE validation check.
